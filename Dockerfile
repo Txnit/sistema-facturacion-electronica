@@ -23,4 +23,4 @@ ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
 # Comando de inicio
-CMD ["java", "-Dserver.port=${PORT:-8080}", "-jar", "target/sistema-facturacion-electronica-1.0.0.jar"]
+CMD ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dspring.profiles.active=prod -jar target/sistema-facturacion-electronica-1.0.0.jar"]
