@@ -1,39 +1,23 @@
-# Dockerfile optimizado para Render.com
-FROM openjdk:21-jdk-slim as builder
+# Dockerfile simple para Render.com
+FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 
-# Copiar Maven wrapper y pom.xml
-COPY mvnw .
-COPY pom.xml .
-COPY .mvn/ .mvn/
+# Copiar todos los archivos del proyecto
+COPY . .
 
-# Hacer ejecutable
+# Hacer Maven wrapper ejecutable
 RUN chmod +x ./mvnw
 
-# Descargar dependencias (para cache)
-RUN ./mvnw dependency:go-offline -B
-
-# Copiar código fuente
-COPY src/ ./src/
-
-# Compilar aplicación
+# Instalar dependencias y compilar
 RUN ./mvnw clean package -DskipTests
-
-# Etapa de runtime - usar imagen que existe
-FROM eclipse-temurin:21-jre-jammy
-
-WORKDIR /app
-
-# Variables de entorno para Render
-ENV SPRING_PROFILES_ACTIVE=prod
-ENV SERVER_PORT=8080
-
-# Copiar JAR compilado
-COPY --from=builder /app/target/sistema-facturacion-electronica-1.0.0.jar app.jar
 
 # Exponer puerto
 EXPOSE 8080
 
-# Comando de inicio optimizado para Render
-CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dserver.port=${PORT:-8080}", "-jar", "app.jar"]
+# Variables de entorno
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+
+# Comando de inicio
+CMD ["java", "-Dserver.port=${PORT:-8080}", "-jar", "target/sistema-facturacion-electronica-1.0.0.jar"]

@@ -1,0 +1,33 @@
+# Ignorar archivos innecesarios para Docker build
+.git
+.gitignore
+README.md
+*.md
+.vscode
+.idea
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Ignorar target si existe (se recrea en build)
+target/classes
+target/generated-sources
+target/generated-test-sources
+target/maven-archiver
+target/maven-status
+target/surefire-reports
+target/test-classes
+
+# Archivos de Windows
+*.bat
+CONSULTA_RUC.bat
+INICIAR_SISTEMA.bat
+PROBAR_MI_RUC.bat
+EJECUTAR_JAR.bat
+EJECUTAR_SIMPLE.bat
+PREPARAR_RAILWAY.bat
+
+# Logs
+logs/
+*.log
