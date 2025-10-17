@@ -1,0 +1,1 @@
+web: java -jar target/sistema-facturacion-electronica-1.0.0.jar

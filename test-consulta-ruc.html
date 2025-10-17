@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Consulta RUC</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, button { padding: 8px; margin-right: 10px; }
+        input { width: 200px; }
+        button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .result { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Consulta RUC SUNAT</h1>
+    
+    <div class="form-group">
+        <label>RUC:</label>
+        <input type="text" id="ruc" placeholder="20100047218" maxlength="11">
+        <button id="btnConsultar" onclick="consultarRuc()">🔍 Consultar RUC</button>
+    </div>
+    
+    <div id="mensajes"></div>
+    <div id="resultado"></div>
+    
+    <h3>RUCs de Prueba:</h3>
+    <ul>
+        <li><strong>20100047218</strong> - Banco de Crédito del Perú</li>
+        <li><strong>20100017491</strong> - Telefónica del Perú S.A.A.</li>
+        <li><strong>20100053455</strong> - Interbank</li>
+        <li><strong>12345678901</strong> - Cualquier RUC válido (datos simulados)</li>
+    </ul>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        // Función para consultar RUC
+        async function consultarRuc() {
+            const ruc = document.getElementById('ruc').value.trim();
+            const btnConsultar = document.getElementById('btnConsultar');
+            
+            // Limpiar mensajes previos
+            document.getElementById('mensajes').innerHTML = '';
+            document.getElementById('resultado').innerHTML = '';
+            
+            // Validar RUC
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                mostrarMensaje('Por favor ingrese un RUC válido de 11 dígitos', 'error');
+                return;
+            }
+            
+            // Cambiar estado del botón
+            btnConsultar.disabled = true;
+            btnConsultar.innerHTML = '⏳ Consultando...';
+            
+            try {
+                console.log('Consultando RUC:', ruc);
+                const response = await fetch(`${API_BASE}/consulta-ruc/${ruc}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Respuesta consulta RUC:', result);
+                    
+                    if (result.success && result.data) {
+                        mostrarMensaje(`✅ ${result.message}`, 'success');
+                        mostrarResultado(result.data);
+                    } else {
+                        mostrarMensaje(`⚠️ ${result.message || 'RUC no encontrado en SUNAT'}`, 'warning');
+                    }
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Error consultando RUC:', error);
+                mostrarMensaje(`❌ Error al consultar RUC: ${error.message}`, 'error');
+            } finally {
+                // Restaurar estado del botón
+                btnConsultar.disabled = false;
+                btnConsultar.innerHTML = '🔍 Consultar RUC';
+            }
+        }
+        
+        // Función para mostrar mensajes
+        function mostrarMensaje(mensaje, tipo) {
+            const elemento = document.getElementById('mensajes');
+            elemento.innerHTML = `<div class="message ${tipo}">${mensaje}</div>`;
+        }
+        
+        // Función para mostrar resultado
+        function mostrarResultado(data) {
+            const html = `
+                <h3>📋 Datos de SUNAT:</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">RUC:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.ruc || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Razón Social:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.razonSocial || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Nombre Comercial:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.nombreComercial || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Estado:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.estado || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Condición:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.condicion || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Dirección:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.direccion || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Departamento:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.departamento || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Provincia:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.provincia || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Distrito:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.distrito || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Ubigeo:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.ubigeo || 'N/A'}</td></tr>
+                    <tr><td style="padding: 5px; border: 1px solid #ddd; font-weight: bold;">Actividad Económica:</td><td style="padding: 5px; border: 1px solid #ddd;">${data.actividadEconomica || 'N/A'}</td></tr>
+                </table>
+            `;
+            document.getElementById('resultado').innerHTML = `<div class="result">${html}</div>`;
+        }
+        
+        // Validación en tiempo real
+        document.getElementById('ruc').addEventListener('input', function() {
+            const ruc = this.value.trim();
+            const btnConsultar = document.getElementById('btnConsultar');
+            const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+            
+            btnConsultar.disabled = !esValido;
+            btnConsultar.style.opacity = esValido ? '1' : '0.6';
+            
+            if (ruc.length > 0 && !esValido) {
+                mostrarMensaje('⚠️ El RUC debe tener exactamente 11 dígitos', 'warning');
+            } else if (ruc.length === 0) {
+                document.getElementById('mensajes').innerHTML = '';
+            }
+        });
+        
+        // Permitir Enter para consultar
+        document.getElementById('ruc').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('btnConsultar').disabled) {
+                consultarRuc();
+            }
+        });
+        
+        console.log('Test Consulta RUC iniciado');
+    </script>
+</body>
+</html>

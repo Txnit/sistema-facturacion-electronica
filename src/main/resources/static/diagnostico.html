@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnóstico - Sistema RUC SUNAT</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { max-width: 800px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }
+        .test-box { background: rgba(255,255,255,0.2); padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 4px solid #00ff88; }
+        .error { border-left-color: #ff4444; }
+        .warning { border-left-color: #ffaa00; }
+        .success { border-left-color: #00ff88; }
+        button { background: #00ff88; color: #333; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; margin: 5px; font-weight: bold; }
+        button:hover { background: #00cc66; }
+        .result { margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 14px; }
+        .log { background: #1a1a1a; color: #00ff88; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        input { padding: 12px; border: none; border-radius: 8px; margin: 5px; font-size: 16px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico del Sistema de Consulta RUC</h1>
+        <p>Esta página verifica que todos los componentes funcionen correctamente</p>
+        
+        <div class="test-box">
+            <h2>📡 Estado del Backend</h2>
+            <p><strong>Estado:</strong> <span id="backend-status">Verificando...</span></p>
+            <button onclick="verificarBackend()">🔄 Verificar Backend</button>
+        </div>
+        
+        <div class="test-box">
+            <h2>🧪 Prueba de API REST</h2>
+            <p>Prueba directa de los endpoints de consulta RUC:</p>
+            <button onclick="probarAPI('20100070970')">🏢 Rimac Seguros</button>
+            <button onclick="probarAPI('20100017491')">🏦 BCP</button>
+            <button onclick="probarAPI('20100130204')">🛒 Supermercados Peruanos</button>
+            <button onclick="probarAPI('20100008805')">🏪 Saga Falabella</button>
+            <div id="api-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h2>🌐 Prueba de Interfaz Web</h2>
+            <p>Simula la funcionalidad de autocompletado:</p>
+            <input type="text" id="test-ruc" placeholder="Ingrese RUC" maxlength="11">
+            <button onclick="simularConsulta()">🔍 Simular Consulta</button>
+            <div id="web-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-box">
+            <h2>📋 Log de Actividad</h2>
+            <button onclick="limpiarLog()">🧹 Limpiar Log</button>
+            <div id="activity-log" class="log">
+                [SISTEMA] Página de diagnóstico iniciada<br>
+            </div>
+        </div>
+        
+        <div class="test-box">
+            <h2>🚀 Enlaces Rápidos</h2>
+            <button onclick="window.open('http://localhost:8080/', '_blank')">🏠 Página Principal</button>
+            <button onclick="window.open('http://localhost:8080/prueba-simple.html', '_blank')">🧪 Página de Prueba</button>
+            <button onclick="window.open('http://localhost:8080/h2-console', '_blank')">🗄️ Base de Datos H2</button>
+        </div>
+    </div>
+
+    <script>
+        function log(mensaje) {
+            const logDiv = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${mensaje}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function verificarBackend() {
+            log('🔍 Verificando estado del backend...');
+            const statusSpan = document.getElementById('backend-status');
+            
+            try {
+                const response = await fetch('/api/consulta-ruc/20100070970');
+                if (response.ok) {
+                    const data = await response.json();
+                    statusSpan.innerHTML = '✅ <span style="color: #00ff88;">Backend funcionando correctamente</span>';
+                    log('✅ Backend responde correctamente');
+                    log(`📊 Prueba exitosa: ${data.data.razonSocial}`);
+                } else {
+                    statusSpan.innerHTML = '❌ <span style="color: #ff4444;">Backend con errores HTTP</span>';
+                    log(`❌ Error HTTP: ${response.status}`);
+                }
+            } catch (error) {
+                statusSpan.innerHTML = '❌ <span style="color: #ff4444;">Backend no disponible</span>';
+                log(`❌ Error de conexión: ${error.message}`);
+            }
+        }
+        
+        async function probarAPI(ruc) {
+            log(`🧪 Probando API con RUC: ${ruc}`);
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Consultando API...';
+            
+            try {
+                const response = await fetch(`/api/consulta-ruc/${ruc}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div style="color: #00ff88;"><strong>✅ ÉXITO</strong></div>
+                        <strong>RUC:</strong> ${data.data.ruc}<br>
+                        <strong>Empresa:</strong> ${data.data.razonSocial}<br>
+                        <strong>Estado:</strong> ${data.data.estado}<br>
+                        <strong>Dirección:</strong> ${data.data.direccion || 'N/A'}<br>
+                        <strong>Mensaje:</strong> ${data.message}
+                    `;
+                    log(`✅ API exitosa: ${data.data.razonSocial}`);
+                } else {
+                    resultDiv.innerHTML = `<div style="color: #ffaa00;">⚠️ ${data.message}</div>`;
+                    log(`⚠️ API sin datos: ${data.message}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #ff4444;">❌ Error: ${error.message}</div>`;
+                log(`❌ Error en API: ${error.message}`);
+            }
+        }
+        
+        async function simularConsulta() {
+            const ruc = document.getElementById('test-ruc').value.trim();
+            const resultDiv = document.getElementById('web-result');
+            
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div style="color: #ff4444;">❌ RUC inválido. Debe tener 11 dígitos.</div>';
+                log('❌ RUC inválido ingresado');
+                return;
+            }
+            
+            log(`🌐 Simulando consulta web para RUC: ${ruc}`);
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Simulando consulta web...';
+            
+            try {
+                const response = await fetch(`/api/consulta-ruc/${ruc}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    // Simular el autocompletado
+                    resultDiv.innerHTML = `
+                        <div style="color: #00ff88;"><strong>✅ AUTOCOMPLETADO SIMULADO</strong></div>
+                        <strong>Tipo Documento:</strong> RUC (06)<br>
+                        <strong>Razón Social:</strong> ${data.data.razonSocial}<br>
+                        <strong>Nombre Comercial:</strong> ${data.data.nombreComercial || data.data.razonSocial}<br>
+                        <strong>Dirección:</strong> ${data.data.direccion || 'N/A'}<br>
+                        <strong>Departamento:</strong> ${data.data.departamento || 'N/A'}<br>
+                        <strong>Provincia:</strong> ${data.data.provincia || 'N/A'}<br>
+                        <strong>Distrito:</strong> ${data.data.distrito || 'N/A'}<br>
+                        <strong>Ubigeo:</strong> ${data.data.ubigeo || 'N/A'}
+                    `;
+                    log(`✅ Autocompletado simulado: ${data.data.razonSocial}`);
+                } else {
+                    resultDiv.innerHTML = `<div style="color: #ffaa00;">⚠️ ${data.message || 'RUC no encontrado'}</div>`;
+                    log(`⚠️ Simulación sin datos: ${data.message}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #ff4444;">❌ Error: ${error.message}</div>`;
+                log(`❌ Error en simulación: ${error.message}`);
+            }
+        }
+        
+        function limpiarLog() {
+            document.getElementById('activity-log').innerHTML = '[SISTEMA] Log limpiado<br>';
+        }
+        
+        // Verificar backend automáticamente al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Sistema de diagnóstico iniciado');
+            setTimeout(verificarBackend, 1000);
+        });
+    </script>
+</body>
+</html>

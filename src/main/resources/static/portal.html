@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Portal Principal - Sistema de Facturación Electrónica</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .portal-container {
+            max-width: 1200px;
+            width: 90%;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.25);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        .card-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        .card p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+        .btn-secondary {
+            background: #17a2b8;
+        }
+        .btn-secondary:hover {
+            background: #138496;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .status-bar {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .quick-access {
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+        .quick-access h3 {
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .quick-links a {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .quick-links a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <div class="header">
+            <h1>🧾 Sistema de Facturación Electrónica</h1>
+            <p>Integrado con SUNAT para consultas automáticas de RUC</p>
+        </div>
+
+        <div class="status-bar">
+            <span class="status-indicator" id="status-indicator"></span>
+            <span id="status-text">Verificando estado del servidor...</span>
+        </div>
+
+        <div class="cards-grid">
+            <div class="card">
+                <span class="card-icon">🔍</span>
+                <h3>Consulta RUC</h3>
+                <p>Consulta automática de datos de empresas desde SUNAT con autocompletado inteligente</p>
+                <a href="javascript:void(0)" onclick="abrirConsultaRuc()" class="btn">🚀 Consultar RUC</a>
+            </div>
+
+            <div class="card">
+                <span class="card-icon">👥</span>
+                <h3>Gestión de Clientes</h3>
+                <p>Administra tu base de datos de clientes con información actualizada de SUNAT</p>
+                <a href="javascript:void(0)" onclick="abrirGestionClientes()" class="btn btn-secondary">📋 Gestionar</a>
+            </div>
+
+            <div class="card">
+                <span class="card-icon">🧪</span>
+                <h3>Herramientas de Prueba</h3>
+                <p>Diagnósticos y pruebas para verificar el funcionamiento del sistema</p>
+                <a href="javascript:void(0)" onclick="abrirDiagnostico()" class="btn btn-warning">🔧 Diagnosticar</a>
+            </div>
+        </div>
+
+        <div class="quick-access">
+            <h3>⚡ Acceso Rápido</h3>
+            <div class="quick-links">
+                <a href="/" target="_blank">🏠 Página Principal</a>
+                <a href="/diagnostico.html" target="_blank">🔧 Diagnóstico</a>
+                <a href="/prueba-simple.html" target="_blank">🧪 Prueba Simple</a>
+                <a href="/test-fetch.html" target="_blank">📡 Test API</a>
+                <a href="/h2-console" target="_blank">🗄️ Base de Datos</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar estado del servidor
+        async function verificarServidor() {
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            try {
+                const response = await fetch('/api/consulta-ruc/20100070970');
+                if (response.ok) {
+                    statusIndicator.className = 'status-indicator status-online';
+                    statusText.textContent = '✅ Servidor funcionando correctamente';
+                } else {
+                    statusIndicator.className = 'status-indicator status-offline';
+                    statusText.textContent = '⚠️ Servidor con problemas';
+                }
+            } catch (error) {
+                statusIndicator.className = 'status-indicator status-offline';
+                statusText.textContent = '❌ Servidor no disponible';
+            }
+        }
+
+        // Funciones de navegación
+        function abrirConsultaRuc() {
+            // Redirigir a la página principal con foco en consulta RUC
+            window.location.href = '/?accion=consulta-ruc';
+        }
+
+        function abrirGestionClientes() {
+            // Redirigir a la página principal con foco en clientes
+            window.location.href = '/?accion=clientes';
+        }
+
+        function abrirDiagnostico() {
+            // Abrir página de diagnóstico
+            window.open('/diagnostico.html', '_blank');
+        }
+
+        // RUCs de prueba rápida
+        const rucsEjemplo = [
+            { ruc: '20100070970', empresa: 'Rimac Seguros' },
+            { ruc: '20100017491', empresa: 'BCP' },
+            { ruc: '20100130204', empresa: 'Supermercados Peruanos' },
+            { ruc: '20100008805', empresa: 'Saga Falabella' }
+        ];
+
+        // Agregar botones de prueba rápida
+        function crearBotonesPrueba() {
+            const quickAccess = document.querySelector('.quick-access');
+            const pruebaDiv = document.createElement('div');
+            pruebaDiv.innerHTML = `
+                <h3 style="margin-top: 25px;">🧪 Pruebas Rápidas</h3>
+                <div class="quick-links">
+                    ${rucsEjemplo.map(item => 
+                        `<a href="javascript:void(0)" onclick="probarRuc('${item.ruc}')">${item.empresa}</a>`
+                    ).join('')}
+                </div>
+            `;
+            quickAccess.appendChild(pruebaDiv);
+        }
+
+        function probarRuc(ruc) {
+            // Abrir página principal y simular consulta
+            const url = `/?ruc=${ruc}`;
+            window.open(url, '_blank');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarServidor();
+            crearBotonesPrueba();
+            
+            // Verificar cada 30 segundos
+            setInterval(verificarServidor, 30000);
+        });
+
+        // Agregar efectos visuales
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

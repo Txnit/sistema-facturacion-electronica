@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Test JavaScript - Consulta RUC</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        button { padding: 15px 25px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        button:hover { background: #0056b3; }
+        .log { background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; margin: 20px 0; }
+        .result { margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Test JavaScript - Consulta RUC</h1>
+        <p>Prueba específica para identificar el error "Failed to fetch"</p>
+        
+        <div>
+            <button onclick="testFetchRelativo()">🔗 Test URL Relativa</button>
+            <button onclick="testFetchCompleta()">🌐 Test URL Completa</button>
+            <button onclick="testMultiple()">🚀 Test Múltiple</button>
+            <button onclick="limpiarLog()">🧹 Limpiar</button>
+        </div>
+        
+        <div id="resultado" class="result" style="display: none;"></div>
+        
+        <div id="log" class="log">
+            [INIT] Test JavaScript iniciado...<br>
+        </div>
+    </div>
+
+    <script>
+        function log(mensaje) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${mensaje}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function mostrarResultado(titulo, contenido, tipo = 'normal') {
+            const resultDiv = document.getElementById('resultado');
+            resultDiv.className = `result ${tipo}`;
+            resultDiv.innerHTML = `<h3>${titulo}</h3><div>${contenido}</div>`;
+            resultDiv.style.display = 'block';
+        }
+        
+        async function testFetchRelativo() {
+            log('🔗 Iniciando test con URL relativa...');
+            
+            try {
+                const ruc = '20100070970';
+                const url = `/api/consulta-ruc/${ruc}`;
+                
+                log(`📤 Haciendo fetch a: ${url}`);
+                
+                const response = await fetch(url);
+                log(`📥 Response status: ${response.status}`);
+                log(`📋 Response headers: ${JSON.stringify([...response.headers])}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Datos recibidos: ${JSON.stringify(data, null, 2)}`);
+                    
+                    mostrarResultado(
+                        '✅ Test URL Relativa - ÉXITO',
+                        `<strong>RUC:</strong> ${data.data.ruc}<br>
+                         <strong>Empresa:</strong> ${data.data.razonSocial}<br>
+                         <strong>Estado:</strong> ${data.data.estado}<br>
+                         <strong>URL usada:</strong> ${url}`,
+                        'success'
+                    );
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`❌ Error en test relativo: ${error.message}`);
+                log(`🔍 Error stack: ${error.stack}`);
+                
+                mostrarResultado(
+                    '❌ Test URL Relativa - ERROR',
+                    `<strong>Error:</strong> ${error.message}<br>
+                     <strong>Tipo:</strong> ${error.name}<br>
+                     <strong>Descripción:</strong> ${error.toString()}`,
+                    'error'
+                );
+            }
+        }
+        
+        async function testFetchCompleta() {
+            log('🌐 Iniciando test con URL completa...');
+            
+            try {
+                const ruc = '20100070970';
+                const url = `http://localhost:8080/api/consulta-ruc/${ruc}`;
+                
+                log(`📤 Haciendo fetch a: ${url}`);
+                
+                const response = await fetch(url);
+                log(`📥 Response status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Datos recibidos: ${JSON.stringify(data, null, 2)}`);
+                    
+                    mostrarResultado(
+                        '✅ Test URL Completa - ÉXITO',
+                        `<strong>RUC:</strong> ${data.data.ruc}<br>
+                         <strong>Empresa:</strong> ${data.data.razonSocial}<br>
+                         <strong>Estado:</strong> ${data.data.estado}<br>
+                         <strong>URL usada:</strong> ${url}`,
+                        'success'
+                    );
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`❌ Error en test completo: ${error.message}`);
+                
+                mostrarResultado(
+                    '❌ Test URL Completa - ERROR',
+                    `<strong>Error:</strong> ${error.message}<br>
+                     <strong>Posible causa:</strong> CORS o conexión bloqueada`,
+                    'error'
+                );
+            }
+        }
+        
+        async function testMultiple() {
+            log('🚀 Iniciando test múltiple...');
+            
+            const rucsTest = [
+                { ruc: '20100070970', empresa: 'Rimac Seguros' },
+                { ruc: '20100017491', empresa: 'BCP' },
+                { ruc: '20100130204', empresa: 'Supermercados Peruanos' }
+            ];
+            
+            let exitosos = 0;
+            let errores = 0;
+            
+            for (const test of rucsTest) {
+                try {
+                    log(`🧪 Probando ${test.empresa} (${test.ruc})...`);
+                    
+                    const response = await fetch(`/api/consulta-ruc/${test.ruc}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            log(`✅ ${test.empresa}: OK`);
+                            exitosos++;
+                        } else {
+                            log(`⚠️ ${test.empresa}: Sin datos`);
+                        }
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    log(`❌ ${test.empresa}: ${error.message}`);
+                    errores++;
+                }
+            }
+            
+            mostrarResultado(
+                '📊 Resultados Test Múltiple',
+                `<strong>Exitosos:</strong> ${exitosos}/${rucsTest.length}<br>
+                 <strong>Errores:</strong> ${errores}/${rucsTest.length}<br>
+                 <strong>Estado:</strong> ${errores === 0 ? '✅ Todos OK' : '⚠️ Hay errores'}`,
+                errores === 0 ? 'success' : 'error'
+            );
+        }
+        
+        function limpiarLog() {
+            document.getElementById('log').innerHTML = '[INIT] Log limpiado...<br>';
+            document.getElementById('resultado').style.display = 'none';
+        }
+        
+        // Auto test al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página cargada, iniciando auto-test...');
+            setTimeout(testFetchRelativo, 1000);
+        });
+    </script>
+</body>
+</html>

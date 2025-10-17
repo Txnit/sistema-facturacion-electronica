@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturación Electrónica - Test RUC</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        .success { color: green; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .warning { color: #856404; background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { color: red; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .flex { display: flex; gap: 10px; align-items: center; }
+        .flex input { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧾 Sistema de Facturación Electrónica</h1>
+        <h2>👥 Gestión de Clientes - Test RUC</h2>
+        
+        <div class="form-group">
+            <label>RUC/DNI:</label>
+            <div class="flex">
+                <input type="text" id="numeroDocumento" placeholder="20100070970" maxlength="11" pattern="[0-9]{11}">
+                <button type="button" onclick="consultarRuc()" id="btnConsultarRuc" style="background: #28a745;">
+                    🔍 Consultar RUC
+                </button>
+                <button type="button" onclick="testRapido()" style="background: #17a2b8;">
+                    🧪 Test
+                </button>
+            </div>
+            <small style="color: #666;">Ingrese RUC de 11 dígitos para autocompletar datos de SUNAT</small>
+        </div>
+        
+        <div id="mensaje-cliente"></div>
+        
+        <div class="form-group">
+            <label>Tipo Documento:</label>
+            <select id="tipoDocumento">
+                <option value="06" selected>RUC</option>
+                <option value="01">DNI</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Razón Social:</label>
+            <input type="text" id="razonSocial" placeholder="Empresa Demo SAC">
+        </div>
+        
+        <div class="form-group">
+            <label>Nombre Comercial:</label>
+            <input type="text" id="nombreComercial" placeholder="Demo SAC">
+        </div>
+        
+        <div class="form-group">
+            <label>Dirección:</label>
+            <input type="text" id="direccion" placeholder="Av. Principal 123">
+        </div>
+        
+        <div class="form-group">
+            <label>Departamento:</label>
+            <input type="text" id="departamento" placeholder="Lima">
+        </div>
+        
+        <div class="form-group">
+            <label>Provincia:</label>
+            <input type="text" id="provincia" placeholder="Lima">
+        </div>
+        
+        <div class="form-group">
+            <label>Distrito:</label>
+            <input type="text" id="distrito" placeholder="Miraflores">
+        </div>
+        
+        <div class="form-group">
+            <label>Ubigeo:</label>
+            <input type="text" id="ubigeo" placeholder="150101">
+        </div>
+        
+        <hr>
+        <h3>📊 Log de Actividad</h3>
+        <div id="log" style="background: #1e1e1e; color: #00ff00; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        function log(mensaje) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${mensaje}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${mensaje}`);
+        }
+        
+        function mostrarMensaje(elementId, mensaje, tipo) {
+            const elemento = document.getElementById(elementId);
+            const claseCSS = tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'error';
+            elemento.innerHTML = `<div class="${claseCSS}">${mensaje}</div>`;
+            
+            setTimeout(() => {
+                elemento.innerHTML = '';
+            }, 8000);
+        }
+        
+        function testRapido() {
+            log('=== INICIANDO TEST RÁPIDO ===');
+            document.getElementById('numeroDocumento').value = '20100070970';
+            mostrarMensaje('mensaje-cliente', '🧪 Test rápido: Consultando RUC de Rimac Seguros...', 'warning');
+            
+            setTimeout(() => {
+                consultarRuc();
+            }, 1000);
+        }
+        
+        async function consultarRuc() {
+            const ruc = document.getElementById('numeroDocumento').value.trim();
+            const btnConsultar = document.getElementById('btnConsultarRuc');
+            
+            log(`=== CONSULTA RUC INICIADA ===`);
+            log(`RUC ingresado: ${ruc}`);
+            
+            // Validar RUC
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                log('ERROR: RUC inválido');
+                mostrarMensaje('mensaje-cliente', 'Por favor ingrese un RUC válido de 11 dígitos', 'error');
+                return;
+            }
+            
+            // Cambiar estado del botón
+            btnConsultar.disabled = true;
+            btnConsultar.innerHTML = '⏳ Consultando...';
+            
+            mostrarMensaje('mensaje-cliente', '🔍 Consultando RUC en SUNAT...', 'warning');
+            log('Iniciando consulta a SUNAT...');
+            
+            try {
+                const url = `${API_BASE}/consulta-ruc/${ruc}`;
+                log(`URL: ${url}`);
+                
+                const response = await fetch(url);
+                log(`Status HTTP: ${response.status} - ${response.statusText}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    log(`Respuesta recibida: ${JSON.stringify(result, null, 2)}`);
+                    
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        log('=== AUTOCOMPLETANDO CAMPOS ===');
+                        
+                        // Verificar que los elementos existan
+                        const elementos = {
+                            tipoDocumento: document.getElementById('tipoDocumento'),
+                            razonSocial: document.getElementById('razonSocial'),
+                            nombreComercial: document.getElementById('nombreComercial'),
+                            direccion: document.getElementById('direccion'),
+                            departamento: document.getElementById('departamento'),
+                            provincia: document.getElementById('provincia'),
+                            distrito: document.getElementById('distrito'),
+                            ubigeo: document.getElementById('ubigeo')
+                        };
+                        
+                        for (const [nombre, elemento] of Object.entries(elementos)) {
+                            if (elemento) {
+                                log(`✓ Elemento ${nombre} encontrado`);
+                            } else {
+                                log(`✗ Elemento ${nombre} NO encontrado`);
+                            }
+                        }
+                        
+                        // Autocompletar campos
+                        if (elementos.tipoDocumento) elementos.tipoDocumento.value = '06';
+                        if (elementos.razonSocial) elementos.razonSocial.value = data.razonSocial || '';
+                        if (elementos.nombreComercial) elementos.nombreComercial.value = data.nombreComercial || data.razonSocial || '';
+                        if (elementos.direccion) elementos.direccion.value = data.direccion || '';
+                        if (elementos.departamento) elementos.departamento.value = data.departamento || '';
+                        if (elementos.provincia) elementos.provincia.value = data.provincia || '';
+                        if (elementos.distrito) elementos.distrito.value = data.distrito || '';
+                        if (elementos.ubigeo) elementos.ubigeo.value = data.ubigeo || '';
+                        
+                        log('=== CAMPOS AUTOCOMPLETADOS ===');
+                        log(`Razón Social: ${data.razonSocial}`);
+                        log(`Estado: ${data.estado}`);
+                        log(`Dirección: ${data.direccion}`);
+                        
+                        mostrarMensaje('mensaje-cliente', 
+                            `✅ Datos encontrados en SUNAT: ${data.razonSocial} - Estado: ${data.estado}`, 
+                            'success');
+                    } else {
+                        log('=== SIN DATOS VÁLIDOS ===');
+                        log(`Success: ${result.success}`);
+                        log(`Message: ${result.message}`);
+                        
+                        mostrarMensaje('mensaje-cliente', 
+                            `⚠️ ${result.message || 'RUC no encontrado en SUNAT'}`, 
+                            'warning');
+                    }
+                } else {
+                    log('=== ERROR HTTP ===');
+                    const errorText = await response.text();
+                    log(`Error text: ${errorText}`);
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log('=== ERROR EN CATCH ===');
+                log(`Error: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+                
+                mostrarMensaje('mensaje-cliente', 
+                    `❌ Error al consultar RUC: ${error.message}`, 
+                    'error');
+            } finally {
+                log('=== FINALIZANDO CONSULTA ===');
+                // Restaurar estado del botón
+                btnConsultar.disabled = false;
+                btnConsultar.innerHTML = '🔍 Consultar RUC';
+            }
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página cargada correctamente');
+            log('✅ Listo para probar consulta RUC');
+            
+            // Autocompletar RUC de prueba
+            document.getElementById('numeroDocumento').value = '20100070970';
+            log('📋 RUC de prueba autocompletado: 20100070970 (Rimac Seguros)');
+        });
+    </script>
+</body>
+</html>

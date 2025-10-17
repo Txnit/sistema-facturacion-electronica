@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Facturación Electrónica - Prueba</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            color: green;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            color: red;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .data-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .data-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .status-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-info">
+        <h1>🚀 Sistema de Facturación Electrónica</h1>
+        <p><strong>Estado:</strong> <span id="app-status">Verificando...</span></p>
+        <p><strong>Base de datos:</strong> H2 (Memoria) | <strong>Puerto:</strong> 8080</p>
+    </div>
+
+    <div class="two-column">
+        <!-- Sección Clientes -->
+        <div class="container">
+            <h2>👥 Gestión de Clientes</h2>
+            
+            <div class="form-group">
+                <label>RUC/DNI:</label>
+                <input type="text" id="numeroDocumento" placeholder="20123456789">
+            </div>
+            
+            <div class="form-group">
+                <label>Tipo Documento:</label>
+                <select id="tipoDocumento">
+                    <option value="06">RUC</option>
+                    <option value="01">DNI</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Razón Social:</label>
+                <input type="text" id="razonSocial" placeholder="Empresa Demo SAC">
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre Comercial:</label>
+                <input type="text" id="nombreComercial" placeholder="Demo SAC">
+            </div>
+            
+            <div class="form-group">
+                <label>Dirección:</label>
+                <input type="text" id="direccion" placeholder="Av. Ejemplo 123">
+            </div>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" placeholder="ventas@demo.com">
+            </div>
+            
+            <button onclick="crearCliente()">➕ Crear Cliente</button>
+            <button onclick="listarClientes()">📋 Listar Clientes</button>
+            
+            <div id="mensaje-cliente"></div>
+        </div>
+
+        <!-- Sección Productos -->
+        <div class="container">
+            <h2>📦 Gestión de Productos</h2>
+            
+            <div class="form-group">
+                <label>Código:</label>
+                <input type="text" id="codigoProducto" placeholder="PROD001">
+            </div>
+            
+            <div class="form-group">
+                <label>Descripción:</label>
+                <input type="text" id="descripcionProducto" placeholder="Producto de ejemplo">
+            </div>
+            
+            <div class="form-group">
+                <label>Precio:</label>
+                <input type="number" id="precio" step="0.01" placeholder="100.00">
+            </div>
+            
+            <div class="form-group">
+                <label>Tipo:</label>
+                <select id="tipo">
+                    <option value="PRODUCTO">Producto</option>
+                    <option value="SERVICIO">Servicio</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Unidad de Medida:</label>
+                <select id="unidadMedida">
+                    <option value="NIU">Unidad</option>
+                    <option value="ZZ">Servicio</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Categoría:</label>
+                <input type="text" id="categoria" placeholder="General">
+            </div>
+            
+            <button onclick="crearProducto()">➕ Crear Producto</button>
+            <button onclick="listarProductos()">📋 Listar Productos</button>
+            
+            <div id="mensaje-producto"></div>
+        </div>
+    </div>
+
+    <!-- Área de datos -->
+    <div class="container">
+        <h2>📊 Datos del Sistema</h2>
+        <div id="datos-sistema" class="data-display">
+            <p>Usa los botones de arriba para ver los datos almacenados en el sistema.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Verificar estado de la aplicación
+        async function verificarEstado() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('app-status').innerHTML = `✅ Conectado (${data.status})`;
+            } catch (error) {
+                document.getElementById('app-status').innerHTML = '❌ Error de conexión';
+            }
+        }
+
+        // Función para mostrar mensajes
+        function mostrarMensaje(elementId, mensaje, esError = false) {
+            const elemento = document.getElementById(elementId);
+            elemento.innerHTML = `<div class="${esError ? 'error' : 'success'}">${mensaje}</div>`;
+            setTimeout(() => elemento.innerHTML = '', 5000);
+        }
+
+        // Crear cliente
+        async function crearCliente() {
+            const cliente = {
+                tipoDocumento: document.getElementById('tipoDocumento').value,
+                numeroDocumento: document.getElementById('numeroDocumento').value,
+                razonSocial: document.getElementById('razonSocial').value,
+                nombreComercial: document.getElementById('nombreComercial').value,
+                direccion: document.getElementById('direccion').value,
+                departamento: 'Lima',
+                provincia: 'Lima',
+                distrito: 'San Isidro',
+                ubigeo: '150131',
+                telefono: '01-2345678',
+                email: document.getElementById('email').value,
+                activo: true
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/clientes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cliente)
+                });
+
+                if (response.ok) {
+                    const clienteCreado = await response.json();
+                    mostrarMensaje('mensaje-cliente', `✅ Cliente creado con ID: ${clienteCreado.id}`);
+                    limpiarFormularioCliente();
+                    listarClientes();
+                } else {
+                    mostrarMensaje('mensaje-cliente', '❌ Error al crear cliente', true);
+                }
+            } catch (error) {
+                mostrarMensaje('mensaje-cliente', '❌ Error de conexión', true);
+            }
+        }
+
+        // Crear producto
+        async function crearProducto() {
+            const producto = {
+                codigo: document.getElementById('codigoProducto').value,
+                descripcion: document.getElementById('descripcionProducto').value,
+                precio: parseFloat(document.getElementById('precio').value),
+                tipo: document.getElementById('tipo').value,
+                unidadMedida: document.getElementById('unidadMedida').value,
+                tipoAfectacionIgv: '10', // Gravado
+                categoria: document.getElementById('categoria').value,
+                activo: true,
+                stock: 100.00,
+                stockMinimo: 10.00
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/productos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(producto)
+                });
+
+                if (response.ok) {
+                    const productoCreado = await response.json();
+                    mostrarMensaje('mensaje-producto', `✅ Producto creado con ID: ${productoCreado.id}`);
+                    limpiarFormularioProducto();
+                    listarProductos();
+                } else {
+                    mostrarMensaje('mensaje-producto', '❌ Error al crear producto', true);
+                }
+            } catch (error) {
+                mostrarMensaje('mensaje-producto', '❌ Error de conexión', true);
+            }
+        }
+
+        // Listar clientes
+        async function listarClientes() {
+            try {
+                const response = await fetch(`${API_BASE}/clientes`);
+                const clientes = await response.json();
+                
+                let html = '<h3>👥 Clientes Registrados</h3>';
+                if (clientes.length === 0) {
+                    html += '<p>No hay clientes registrados.</p>';
+                } else {
+                    clientes.forEach(cliente => {
+                        html += `
+                            <div class="data-item">
+                                <strong>${cliente.razonSocial}</strong><br>
+                                ${cliente.tipoDocumento}: ${cliente.numeroDocumento}<br>
+                                📧 ${cliente.email} | 📍 ${cliente.direccion}
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('datos-sistema').innerHTML = html;
+            } catch (error) {
+                document.getElementById('datos-sistema').innerHTML = '<p class="error">❌ Error al cargar clientes</p>';
+            }
+        }
+
+        // Listar productos
+        async function listarProductos() {
+            try {
+                const response = await fetch(`${API_BASE}/productos`);
+                const productos = await response.json();
+                
+                let html = '<h3>📦 Productos Registrados</h3>';
+                if (productos.length === 0) {
+                    html += '<p>No hay productos registrados.</p>';
+                } else {
+                    productos.forEach(producto => {
+                        html += `
+                            <div class="data-item">
+                                <strong>${producto.descripcion}</strong> (${producto.codigo})<br>
+                                💰 S/ ${producto.precio} | 📦 ${producto.tipo}<br>
+                                📊 Stock: ${producto.stock || 'N/A'} ${producto.unidadMedida}
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('datos-sistema').innerHTML = html;
+            } catch (error) {
+                document.getElementById('datos-sistema').innerHTML = '<p class="error">❌ Error al cargar productos</p>';
+            }
+        }
+
+        // Limpiar formularios
+        function limpiarFormularioCliente() {
+            ['numeroDocumento', 'razonSocial', 'nombreComercial', 'direccion', 'email'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        function limpiarFormularioProducto() {
+            ['codigoProducto', 'descripcionProducto', 'precio', 'categoria'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        }
+
+        // Inicializar
+        verificarEstado();
+        setInterval(verificarEstado, 30000); // Verificar cada 30 segundos
+    </script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado de la Búsqueda - Sistema de Facturación Electrónica</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .result-title {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #34495e;
+            margin-left: 10px;
+            line-height: 1.4;
+        }
+        
+        .ruc-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            margin: 5px 10px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .fecha-consulta {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Resultado de la Búsqueda</h1>
+            <p>Información completa del contribuyente SUNAT</p>
+        </div>
+        
+        <div class="content">
+            <div id="loading" class="loading">
+                <h3>🔍 Cargando información...</h3>
+                <p>Obteniendo datos de SUNAT</p>
+            </div>
+            
+            <div id="error" class="error" style="display: none;">
+                <h4>❌ Error al cargar la información</h4>
+                <p id="error-message"></p>
+            </div>
+            
+            <div id="resultado-busqueda" style="display: none;">
+                <div class="result-title">
+                    Resultado de la Búsqueda
+                </div>
+                
+                <div class="ruc-info">
+                    <div class="info-item">
+                        <div class="info-label">Número de RUC:</div>
+                        <div class="info-value" id="ruc-completo"></div>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-item">
+                        <div class="info-label">Tipo Contribuyente:</div>
+                        <div class="info-value" id="tipo-contribuyente"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Nombre Comercial:</div>
+                        <div class="info-value" id="nombre-comercial"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Fecha de Inscripción:</div>
+                        <div class="info-value" id="fecha-inscripcion"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Fecha de Inicio de Actividades:</div>
+                        <div class="info-value" id="fecha-inicio-actividades"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Estado del Contribuyente:</div>
+                        <div class="info-value" id="estado-contribuyente"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Condición del Contribuyente:</div>
+                        <div class="info-value" id="condicion-contribuyente"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Domicilio Fiscal:</div>
+                        <div class="info-value" id="domicilio-fiscal"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Sistema Emisión de Comprobante:</div>
+                        <div class="info-value" id="sistema-emision"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Actividad Comercio Exterior:</div>
+                        <div class="info-value" id="actividad-comercio-exterior"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Sistema Contabilidad:</div>
+                        <div class="info-value" id="sistema-contabilidad"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Actividad(es) Económica(s):</div>
+                        <div class="info-value" id="actividades-economicas"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Comprobantes de Pago c/aut. de impresión (F. 806 u 816):</div>
+                        <div class="info-value" id="comprobantes-autorizados"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Sistema de Emisión Electrónica:</div>
+                        <div class="info-value" id="sistema-emision-electronica"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Emisor electrónico desde:</div>
+                        <div class="info-value" id="emisor-electronico-desde"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Comprobantes Electrónicos:</div>
+                        <div class="info-value" id="comprobantes-electronicos"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Afiliado al PLE desde:</div>
+                        <div class="info-value" id="afiliado-ple"></div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Padrones:</div>
+                        <div class="info-value" id="padrones"></div>
+                    </div>
+                </div>
+                
+                <div class="fecha-consulta">
+                    Fecha consulta: <span id="fecha-consulta-actual"></span>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <a href="/?accion=consulta-ruc" class="btn btn-secondary">🔍 Nueva Consulta</a>
+                <button onclick="crearFactura()" class="btn btn-primary">📄 Crear Factura</button>
+                <a href="/" class="btn btn-success">🏠 Inicio</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Obtener el RUC de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const ruc = urlParams.get('ruc');
+        
+        if (!ruc) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = 'No se proporcionó un RUC válido';
+        } else {
+            cargarDetalleCliente(ruc);
+        }
+        
+        async function cargarDetalleCliente(ruc) {
+            try {
+                console.log('Cargando detalle para RUC:', ruc);
+                
+                const response = await fetch(`/api/consulta-ruc/${ruc}`);
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+                
+                if (data.success && data.data) {
+                    mostrarResultado(data.data);
+                } else {
+                    throw new Error(data.message || 'No se encontraron datos');
+                }
+            } catch (error) {
+                console.error('Error al cargar detalle:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+        
+        function mostrarResultado(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('resultado-busqueda').style.display = 'block';
+            
+            // RUC completo con formato específico que me diste
+            const rucCompleto = `${data.numeroDocumento || 'N/A'} - ${data.razonSocial || 'N/A'}`;
+            document.getElementById('ruc-completo').textContent = rucCompleto;
+            
+            // Información básica
+            document.getElementById('tipo-contribuyente').textContent = data.tipoContribuyente || '-';
+            document.getElementById('nombre-comercial').textContent = data.nombreComercial || '-';
+            document.getElementById('fecha-inscripcion').textContent = data.fechaInscripcion || '-';
+            document.getElementById('fecha-inicio-actividades').textContent = data.fechaInicioActividades || '-';
+            document.getElementById('estado-contribuyente').textContent = data.estado || '-';
+            document.getElementById('condicion-contribuyente').textContent = data.condicionContribuyente || '-';
+            document.getElementById('domicilio-fiscal').textContent = data.direccion || '-';
+            document.getElementById('sistema-emision').textContent = data.sistemaEmision || '-';
+            document.getElementById('actividad-comercio-exterior').textContent = data.actividadComercioExterior || '-';
+            document.getElementById('sistema-contabilidad').textContent = data.sistemaContabilidad || '-';
+            
+            // Actividades económicas con formato específico
+            let actividades = '';
+            if (data.actividadPrincipal) {
+                actividades += `Principal - ${data.actividadPrincipal}`;
+            }
+            if (data.actividadSecundaria1) {
+                actividades += `\nSecundaria 1 - ${data.actividadSecundaria1}`;
+            }
+            if (data.actividadSecundaria2) {
+                actividades += `\nSecundaria 2 - ${data.actividadSecundaria2}`;
+            }
+            document.getElementById('actividades-economicas').innerHTML = 
+                actividades.replace(/\n/g, '<br>') || '-';
+            
+            // Comprobantes y sistemas electrónicos
+            document.getElementById('comprobantes-autorizados').textContent = data.comprobantesAutorizados || '-';
+            document.getElementById('sistema-emision-electronica').textContent = data.sistemaEmisionElectronica || '-';
+            document.getElementById('emisor-electronico-desde').textContent = data.emisorElectronicoDesde || '-';
+            document.getElementById('comprobantes-electronicos').textContent = data.comprobantesElectronicos || '-';
+            document.getElementById('afiliado-ple').textContent = data.afiliadoPleDesde || '-';
+            document.getElementById('padrones').textContent = data.padrones || 'NINGUNO';
+            
+            // Fecha de consulta actual en formato específico
+            const fechaActual = new Date();
+            const fechaFormateada = fechaActual.toLocaleDateString('es-PE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }) + ' ' + fechaActual.toLocaleTimeString('es-PE', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('fecha-consulta-actual').textContent = fechaFormateada;
+        }
+        
+        function crearFactura() {
+            if (ruc) {
+                window.location.href = `/?accion=crear-factura&cliente-ruc=${ruc}`;
+            } else {
+                alert('No se puede crear factura sin RUC del cliente');
+            }
+        }
+    </script>
+</body>
+</html>

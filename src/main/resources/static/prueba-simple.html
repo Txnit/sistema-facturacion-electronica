@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Prueba Simple - Consulta RUC</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        input { padding: 15px; font-size: 16px; width: 300px; border: 2px solid #ddd; border-radius: 5px; }
+        button { padding: 15px 25px; font-size: 16px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+        button:hover { background: #218838; }
+        .resultado { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #007bff; }
+        .success { background: #d4edda; border-left-color: #28a745; }
+        .error { background: #f8d7da; border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Prueba Simple de Consulta RUC</h1>
+        <p><strong>Estado del Backend:</strong> <span id="status">Verificando...</span></p>
+        
+        <div style="margin: 20px 0;">
+            <input type="text" id="rucInput" placeholder="Ingrese RUC (ej: 20100070970)" maxlength="11">
+            <button onclick="consultarRucSimple()">🔍 Consultar</button>
+        </div>
+        
+        <div id="resultado" class="resultado" style="display: none;">
+            <h3>📊 Resultado:</h3>
+            <div id="contenidoResultado"></div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <h3>🚀 Pruebas Rápidas:</h3>
+            <button onclick="pruebaRapida('20100070970')" style="background: #007bff;">Rimac Seguros</button>
+            <button onclick="pruebaRapida('20100017491')" style="background: #007bff;">BCP</button>
+            <button onclick="pruebaRapida('20100130204')" style="background: #007bff;">Supermercados Peruanos</button>
+        </div>
+    </div>
+
+    <script>
+        // Verificar estado del backend al cargar
+        async function verificarBackend() {
+            try {
+                const response = await fetch('http://localhost:8080/api/consulta-ruc/20100070970');
+                if (response.ok) {
+                    document.getElementById('status').innerHTML = '✅ <span style="color: green;">Backend funcionando correctamente</span>';
+                } else {
+                    document.getElementById('status').innerHTML = '❌ <span style="color: red;">Backend con problemas</span>';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '❌ <span style="color: red;">Backend no disponible</span>';
+            }
+        }
+        
+        async function consultarRucSimple() {
+            const ruc = document.getElementById('rucInput').value.trim();
+            const resultadoDiv = document.getElementById('resultado');
+            const contenidoDiv = document.getElementById('contenidoResultado');
+            
+            console.log('🔍 Consultando RUC:', ruc);
+            
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                contenidoDiv.innerHTML = '<span style="color: red;">❌ Por favor ingrese un RUC válido de 11 dígitos</span>';
+                resultadoDiv.className = 'resultado error';
+                resultadoDiv.style.display = 'block';
+                return;
+            }
+            
+            contenidoDiv.innerHTML = '⏳ Consultando en SUNAT...';
+            resultadoDiv.className = 'resultado';
+            resultadoDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch(`http://localhost:8080/api/consulta-ruc/${ruc}`);
+                const result = await response.json();
+                
+                console.log('📥 Respuesta recibida:', result);
+                
+                if (result.success && result.data) {
+                    const data = result.data;
+                    contenidoDiv.innerHTML = `
+                        <div style="color: green;"><strong>✅ DATOS ENCONTRADOS</strong></div>
+                        <div style="margin-top: 10px;">
+                            <strong>RUC:</strong> ${data.ruc}<br>
+                            <strong>Razón Social:</strong> ${data.razonSocial}<br>
+                            <strong>Nombre Comercial:</strong> ${data.nombreComercial || 'N/A'}<br>
+                            <strong>Estado:</strong> ${data.estado}<br>
+                            <strong>Condición:</strong> ${data.condicion}<br>
+                            <strong>Dirección:</strong> ${data.direccion || 'N/A'}<br>
+                            <strong>Departamento:</strong> ${data.departamento || 'N/A'}<br>
+                            <strong>Provincia:</strong> ${data.provincia || 'N/A'}<br>
+                            <strong>Distrito:</strong> ${data.distrito || 'N/A'}
+                        </div>
+                    `;
+                    resultadoDiv.className = 'resultado success';
+                } else {
+                    contenidoDiv.innerHTML = `<span style="color: orange;">⚠️ ${result.message || 'RUC no encontrado'}</span>`;
+                    resultadoDiv.className = 'resultado';
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                contenidoDiv.innerHTML = `<span style="color: red;">❌ Error: ${error.message}</span>`;
+                resultadoDiv.className = 'resultado error';
+            }
+        }
+        
+        function pruebaRapida(ruc) {
+            document.getElementById('rucInput').value = ruc;
+            consultarRucSimple();
+        }
+        
+        // Verificar backend al cargar la página
+        document.addEventListener('DOMContentLoaded', verificarBackend);
+        
+        console.log('✅ Página de prueba cargada');
+    </script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug RUC - Sistema Facturación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-panel {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .ruc-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .ruc-container input {
+            flex: 1;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success { 
+            color: green; 
+            padding: 10px; 
+            background: #f0f8f0; 
+            border: 1px solid #d4edda;
+            border-radius: 4px; 
+            margin-top: 10px;
+        }
+        .error { 
+            color: red; 
+            padding: 10px; 
+            background: #f8f0f0; 
+            border: 1px solid #f5c6cb;
+            border-radius: 4px; 
+            margin-top: 10px;
+        }
+        .warning { 
+            color: orange; 
+            padding: 10px; 
+            background: #f8f8f0; 
+            border: 1px solid #ffeaa7;
+            border-radius: 4px; 
+            margin-top: 10px;
+        }
+        .field-status {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug RUC - Sistema Facturación Electrónica</h1>
+    
+    <div class="debug-panel" id="debug-log">
+        <strong>🐛 DEBUG LOG:</strong><br>
+        Página cargada - esperando interacciones...<br>
+    </div>
+    
+    <div class="two-column">
+        <!-- Panel de prueba -->
+        <div class="form-container">
+            <h2>🧪 Prueba de RUC</h2>
+            
+            <div class="form-group">
+                <label>RUC/DNI:</label>
+                <div class="ruc-container">
+                    <input type="text" id="numeroDocumento" placeholder="20100047218" maxlength="11">
+                    <button type="button" onclick="consultarRuc()" id="btnConsultarRuc">
+                        🔍 Consultar RUC
+                    </button>
+                </div>
+                <small>Prueba con: 20100047218 (BCP), 20100017491 (Telefónica), 20100053455 (Interbank)</small>
+            </div>
+            
+            <div id="mensaje-cliente"></div>
+        </div>
+        
+        <!-- Panel de campos -->
+        <div class="form-container">
+            <h2>📋 Campos del Cliente</h2>
+            
+            <div class="form-group">
+                <label>Tipo Documento:</label>
+                <select id="tipoDocumento">
+                    <option value="06">RUC</option>
+                    <option value="01">DNI</option>
+                </select>
+                <div class="field-status" id="status-tipoDocumento">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Razón Social:</label>
+                <input type="text" id="razonSocial" placeholder="Empresa Demo SAC">
+                <div class="field-status" id="status-razonSocial">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre Comercial:</label>
+                <input type="text" id="nombreComercial" placeholder="Demo">
+                <div class="field-status" id="status-nombreComercial">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Dirección:</label>
+                <input type="text" id="direccion" placeholder="Av. Demo 123">
+                <div class="field-status" id="status-direccion">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Departamento:</label>
+                <input type="text" id="departamento" placeholder="LIMA">
+                <div class="field-status" id="status-departamento">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Provincia:</label>
+                <input type="text" id="provincia" placeholder="LIMA">
+                <div class="field-status" id="status-provincia">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Distrito:</label>
+                <input type="text" id="distrito" placeholder="MIRAFLORES">
+                <div class="field-status" id="status-distrito">Sin datos</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Ubigeo:</label>
+                <input type="text" id="ubigeo" placeholder="150101">
+                <div class="field-status" id="status-ubigeo">Sin datos</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        
+        function debugLog(mensaje) {
+            const debugPanel = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            debugPanel.innerHTML += `<br>[${timestamp}] ${mensaje}`;
+            debugPanel.scrollTop = debugPanel.scrollHeight;
+            console.log(`[DEBUG] ${mensaje}`);
+        }
+        
+        function updateFieldStatus(fieldId, mensaje) {
+            const statusElement = document.getElementById(`status-${fieldId}`);
+            if (statusElement) {
+                statusElement.textContent = mensaje;
+                debugLog(`Estado campo ${fieldId}: ${mensaje}`);
+            }
+        }
+        
+        function mostrarMensaje(elementId, mensaje, tipo) {
+            debugLog(`Mostrando mensaje (${tipo}): ${mensaje}`);
+            const elemento = document.getElementById(elementId);
+            if (elemento) {
+                const claseCSS = tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'error';
+                elemento.innerHTML = `<div class="${claseCSS}">${mensaje}</div>`;
+                
+                // Auto-limpiar mensaje después de 5 segundos
+                setTimeout(() => {
+                    elemento.innerHTML = '';
+                    debugLog('Mensaje auto-limpiado');
+                }, 5000);
+            } else {
+                debugLog(`ERROR: Elemento ${elementId} no encontrado`);
+            }
+        }
+        
+        async function consultarRuc() {
+            debugLog('=== INICIO CONSULTA RUC ===');
+            
+            const ruc = document.getElementById('numeroDocumento').value.trim();
+            const btnConsultar = document.getElementById('btnConsultarRuc');
+            
+            debugLog(`RUC ingresado: "${ruc}"`);
+            debugLog(`Botón encontrado: ${btnConsultar ? 'SÍ' : 'NO'}`);
+            
+            // Validar RUC
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                debugLog('ERROR: RUC inválido');
+                mostrarMensaje('mensaje-cliente', 'Por favor ingrese un RUC válido de 11 dígitos', 'error');
+                return;
+            }
+            
+            debugLog('RUC válido - iniciando consulta');
+            
+            // Cambiar estado del botón
+            if (btnConsultar) {
+                btnConsultar.disabled = true;
+                btnConsultar.innerHTML = '⏳ Consultando...';
+                debugLog('Botón deshabilitado');
+            }
+            
+            try {
+                const url = `${API_BASE}/consulta-ruc/${ruc}`;
+                debugLog(`URL de consulta: ${url}`);
+                
+                const response = await fetch(url);
+                debugLog(`Respuesta HTTP: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    debugLog(`Datos recibidos: ${JSON.stringify(result, null, 2)}`);
+                    
+                    if (result.success && result.data) {
+                        debugLog('=== INICIANDO AUTOCOMPLETADO ===');
+                        const data = result.data;
+                        
+                        // Autocompletar campos con validación
+                        const campos = [
+                            { id: 'tipoDocumento', valor: '06', label: 'Tipo Documento' },
+                            { id: 'razonSocial', valor: data.razonSocial || '', label: 'Razón Social' },
+                            { id: 'nombreComercial', valor: data.nombreComercial || data.razonSocial || '', label: 'Nombre Comercial' },
+                            { id: 'direccion', valor: data.direccion || '', label: 'Dirección' },
+                            { id: 'departamento', valor: data.departamento || '', label: 'Departamento' },
+                            { id: 'provincia', valor: data.provincia || '', label: 'Provincia' },
+                            { id: 'distrito', valor: data.distrito || '', label: 'Distrito' },
+                            { id: 'ubigeo', valor: data.ubigeo || '', label: 'Ubigeo' }
+                        ];
+                        
+                        campos.forEach(campo => {
+                            const elemento = document.getElementById(campo.id);
+                            if (elemento) {
+                                elemento.value = campo.valor;
+                                updateFieldStatus(campo.id, `Autocompletado: "${campo.valor}"`);
+                                debugLog(`✅ ${campo.label}: "${campo.valor}"`);
+                            } else {
+                                debugLog(`❌ ERROR: Campo ${campo.id} no encontrado`);
+                            }
+                        });
+                        
+                        debugLog('=== AUTOCOMPLETADO FINALIZADO ===');
+                        
+                        mostrarMensaje('mensaje-cliente', 
+                            `✅ Datos encontrados en SUNAT: ${data.razonSocial} - Estado: ${data.estado}`, 
+                            'success');
+                    } else {
+                        debugLog('No se encontraron datos o consulta no exitosa');
+                        mostrarMensaje('mensaje-cliente', 
+                            `⚠️ ${result.message || 'RUC no encontrado en SUNAT'}`, 
+                            'warning');
+                    }
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                debugLog(`ERROR en consulta: ${error.message}`);
+                console.error('Error consultando RUC:', error);
+                mostrarMensaje('mensaje-cliente', 
+                    `❌ Error al consultar RUC: ${error.message}`, 
+                    'error');
+            } finally {
+                // Restaurar estado del botón
+                if (btnConsultar) {
+                    btnConsultar.disabled = false;
+                    btnConsultar.innerHTML = '🔍 Consultar RUC';
+                    debugLog('Botón restaurado');
+                }
+                debugLog('=== FIN CONSULTA RUC ===');
+            }
+        }
+        
+        // Validación en tiempo real del RUC
+        function initRucValidation() {
+            debugLog('Inicializando validación de RUC');
+            const rucInput = document.getElementById('numeroDocumento');
+            const btnConsultar = document.getElementById('btnConsultarRuc');
+            
+            if (rucInput && btnConsultar) {
+                rucInput.addEventListener('input', function() {
+                    const ruc = this.value.trim();
+                    const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+                    
+                    btnConsultar.disabled = !esValido;
+                    btnConsultar.style.opacity = esValido ? '1' : '0.6';
+                    
+                    debugLog(`RUC: "${ruc}" - Válido: ${esValido}`);
+                    
+                    if (ruc.length > 0 && !esValido) {
+                        mostrarMensaje('mensaje-cliente', 
+                            '⚠️ El RUC debe tener exactamente 11 dígitos', 
+                            'warning');
+                    }
+                });
+                debugLog('Validación de RUC configurada');
+            } else {
+                debugLog('ERROR: No se encontraron elementos para validación');
+            }
+        }
+        
+        // Ejecutar inicialización cuando cargue la página
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 DOM Content Loaded - Inicializando sistema');
+            initRucValidation();
+            debugLog('✅ Sistema iniciado correctamente');
+            
+            // Agregar listeners para detectar cambios en campos
+            const campos = ['tipoDocumento', 'razonSocial', 'nombreComercial', 'direccion', 'departamento', 'provincia', 'distrito', 'ubigeo'];
+            campos.forEach(campo => {
+                const elemento = document.getElementById(campo);
+                if (elemento) {
+                    elemento.addEventListener('change', function() {
+                        updateFieldStatus(campo, `Valor actual: "${this.value}"`);
+                    });
+                }
+            });
+        });
+        
+        debugLog('📄 Script cargado - esperando DOM Content Loaded');
+    </script>
+</body>
+</html>

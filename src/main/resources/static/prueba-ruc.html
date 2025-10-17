@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba RUC - Sistema Facturación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success { color: green; padding: 10px; background: #f0f8f0; border-radius: 4px; }
+        .error { color: red; padding: 10px; background: #f8f0f0; border-radius: 4px; }
+        .warning { color: orange; padding: 10px; background: #f8f8f0; border-radius: 4px; }
+        #resultado {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Prueba de Consulta RUC</h1>
+    
+    <div class="form-group">
+        <label>RUC:</label>
+        <input type="text" id="rucInput" placeholder="20100047218" maxlength="11">
+        <small>Prueba con: 20100047218 (BCP), 20100017491 (Telefónica), 20100053455 (Interbank)</small>
+    </div>
+    
+    <button id="btnConsultar" onclick="consultarRuc()">🔍 Consultar RUC</button>
+    
+    <div id="resultado"></div>
+    
+    <h3>Campos para autocompletar:</h3>
+    <div class="form-group">
+        <label>Tipo Documento:</label>
+        <input type="text" id="tipoDocumento" readonly>
+    </div>
+    
+    <div class="form-group">
+        <label>Razón Social:</label>
+        <input type="text" id="razonSocial" readonly>
+    </div>
+    
+    <div class="form-group">
+        <label>Nombre Comercial:</label>
+        <input type="text" id="nombreComercial" readonly>
+    </div>
+    
+    <div class="form-group">
+        <label>Dirección:</label>
+        <input type="text" id="direccion" readonly>
+    </div>
+    
+    <div class="form-group">
+        <label>Departamento:</label>
+        <input type="text" id="departamento" readonly>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function consultarRuc() {
+            const ruc = document.getElementById('rucInput').value.trim();
+            const btnConsultar = document.getElementById('btnConsultar');
+            const resultado = document.getElementById('resultado');
+            
+            // Validar RUC
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                resultado.innerHTML = '<div class="error">❌ Por favor ingrese un RUC válido de 11 dígitos</div>';
+                return;
+            }
+            
+            // Cambiar estado del botón
+            btnConsultar.disabled = true;
+            btnConsultar.innerHTML = '⏳ Consultando...';
+            resultado.innerHTML = '<div>⏳ Consultando RUC en SUNAT...</div>';
+            
+            try {
+                console.log('Consultando RUC:', ruc);
+                console.log('URL:', `${API_BASE}/consulta-ruc/${ruc}`);
+                
+                const response = await fetch(`${API_BASE}/consulta-ruc/${ruc}`);
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Respuesta completa:', result);
+                    
+                    if (result.success && result.data) {
+                        // Mostrar resultado exitoso
+                        const data = result.data;
+                        resultado.innerHTML = `
+                            <div class="success">
+                                ✅ <strong>Datos encontrados en SUNAT:</strong><br>
+                                <strong>RUC:</strong> ${data.ruc || 'N/A'}<br>
+                                <strong>Razón Social:</strong> ${data.razonSocial || 'N/A'}<br>
+                                <strong>Nombre Comercial:</strong> ${data.nombreComercial || 'N/A'}<br>
+                                <strong>Estado:</strong> ${data.estado || 'N/A'}<br>
+                                <strong>Condición:</strong> ${data.condicion || 'N/A'}<br>
+                                <strong>Dirección:</strong> ${data.direccion || 'N/A'}<br>
+                                <strong>Departamento:</strong> ${data.departamento || 'N/A'}<br>
+                                <strong>Provincia:</strong> ${data.provincia || 'N/A'}<br>
+                                <strong>Distrito:</strong> ${data.distrito || 'N/A'}
+                            </div>
+                        `;
+                        
+                        // Autocompletar campos
+                        document.getElementById('tipoDocumento').value = '06'; // RUC
+                        document.getElementById('razonSocial').value = data.razonSocial || '';
+                        document.getElementById('nombreComercial').value = data.nombreComercial || data.razonSocial || '';
+                        document.getElementById('direccion').value = data.direccion || '';
+                        document.getElementById('departamento').value = data.departamento || '';
+                        
+                        console.log('✅ Autocompletado realizado exitosamente');
+                        
+                    } else {
+                        resultado.innerHTML = `
+                            <div class="warning">
+                                ⚠️ ${result.message || 'RUC no encontrado en SUNAT'}
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('Error consultando RUC:', error);
+                resultado.innerHTML = `
+                    <div class="error">
+                        ❌ <strong>Error al consultar RUC:</strong><br>
+                        ${error.message}<br>
+                        <small>Verifique que la aplicación esté ejecutándose en http://localhost:8080</small>
+                    </div>
+                `;
+            } finally {
+                // Restaurar estado del botón
+                btnConsultar.disabled = false;
+                btnConsultar.innerHTML = '🔍 Consultar RUC';
+            }
+        }
+        
+        // Event listener para validación en tiempo real
+        document.getElementById('rucInput').addEventListener('input', function() {
+            const ruc = this.value.trim();
+            const btnConsultar = document.getElementById('btnConsultar');
+            const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+            
+            btnConsultar.disabled = !esValido;
+            btnConsultar.style.opacity = esValido ? '1' : '0.6';
+        });
+        
+        console.log('🧪 Página de prueba RUC cargada');
+        console.log('📍 API Base URL:', API_BASE);
+    </script>
+</body>
+</html>
