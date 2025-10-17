@@ -20,8 +20,8 @@ COPY src/ ./src/
 # Compilar aplicación
 RUN ./mvnw clean package -DskipTests
 
-# Etapa de runtime
-FROM openjdk:21-jre-slim
+# Etapa de runtime - usar imagen que existe
+FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 
