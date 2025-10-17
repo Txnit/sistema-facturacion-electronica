@@ -3,14 +3,17 @@ FROM eclipse-temurin:21-jdk-jammy
 
 WORKDIR /app
 
-# Copiar todos los archivos del proyecto
-COPY . .
+# Instalar Maven directamente
+RUN apt-get update && \
+    apt-get install -y maven && \
+    rm -rf /var/lib/apt/lists/*
 
-# Hacer Maven wrapper ejecutable
-RUN chmod +x ./mvnw
+# Copiar archivos del proyecto
+COPY pom.xml .
+COPY src ./src
 
-# Instalar dependencias y compilar
-RUN ./mvnw clean package -DskipTests
+# Compilar con Maven directo
+RUN mvn clean package -DskipTests
 
 # Exponer puerto
 EXPOSE 8080
