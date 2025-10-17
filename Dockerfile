@@ -1,21 +1,39 @@
-# Usar imagen base de Java 17
-FROM openjdk:17-jdk-slim
+# Dockerfile optimizado para Render.com
+FROM openjdk:21-jdk-slim as builder
 
-# Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos del proyecto
+# Copiar Maven wrapper y pom.xml
+COPY mvnw .
 COPY pom.xml .
-COPY src ./src
+COPY .mvn/ .mvn/
 
-# Instalar Maven
-RUN apt-get update && apt-get install -y maven
+# Hacer ejecutable
+RUN chmod +x ./mvnw
 
-# Compilar la aplicación
-RUN mvn clean package -DskipTests
+# Descargar dependencias (para cache)
+RUN ./mvnw dependency:go-offline -B
 
-# Exponer el puerto 8080
+# Copiar código fuente
+COPY src/ ./src/
+
+# Compilar aplicación
+RUN ./mvnw clean package -DskipTests
+
+# Etapa de runtime
+FROM openjdk:21-jre-slim
+
+WORKDIR /app
+
+# Variables de entorno para Render
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV SERVER_PORT=8080
+
+# Copiar JAR compilado
+COPY --from=builder /app/target/sistema-facturacion-electronica-1.0.0.jar app.jar
+
+# Exponer puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-CMD ["java", "-jar", "target/sistema-facturacion-electronica-1.0.0.jar"]
+# Comando de inicio optimizado para Render
+CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dserver.port=${PORT:-8080}", "-jar", "app.jar"]
