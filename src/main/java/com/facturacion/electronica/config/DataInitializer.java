@@ -51,39 +51,6 @@ public class DataInitializer implements CommandLineRunner {
         productoGenerico.setTipoAfectacionIgv("10"); // Gravado
         productoRepository.save(productoGenerico);
 
-        // Servicio de consultoría
-        Producto consultoria = new Producto();
-        consultoria.setCodigo("CONS-001");
-        consultoria.setDescripcion("Servicios de Consultoría");
-        consultoria.setUnidadMedida("HOR");
-        consultoria.setPrecio(new BigDecimal("150.00"));
-        consultoria.setTipo(TipoProducto.SERVICIO);
-        consultoria.setActivo(true);
-        consultoria.setTipoAfectacionIgv("10"); // Gravado
-        productoRepository.save(consultoria);
-
-        // Software y licencias
-        Producto software = new Producto();
-        software.setCodigo("SOFT-001");
-        software.setDescripcion("Licencia de Software");
-        software.setUnidadMedida("UNI");
-        software.setPrecio(new BigDecimal("300.00"));
-        software.setTipo(TipoProducto.SERVICIO);
-        software.setActivo(true);
-        software.setTipoAfectacionIgv("10"); // Gravado
-        productoRepository.save(software);
-
-        // Capacitación
-        Producto capacitacion = new Producto();
-        capacitacion.setCodigo("CAP-001");
-        capacitacion.setDescripcion("Capacitación y Entrenamiento");
-        capacitacion.setUnidadMedida("HOR");
-        capacitacion.setPrecio(new BigDecimal("80.00"));
-        capacitacion.setTipo(TipoProducto.SERVICIO);
-        capacitacion.setActivo(true);
-        capacitacion.setTipoAfectacionIgv("10"); // Gravado
-        productoRepository.save(capacitacion);
-
         System.out.println("✅ Productos por defecto creados exitosamente");
     }
 }
