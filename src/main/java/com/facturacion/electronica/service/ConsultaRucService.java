@@ -75,22 +75,46 @@ public class ConsultaRucService {
         try {
             System.out.println("🏛️ Consultando página oficial de SUNAT para RUC: " + ruc);
             
-            // URL oficial de consulta SUNAT
-            String url = "https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp";
+            // Primer paso: Obtener la página de consulta
+            String urlConsulta = "https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp";
             
-            // Realizar web scraping REAL (requiere configuración adicional en producción)
-            // Por ahora retornamos null para indicar que la consulta real no está disponible
-            System.out.println("⚠️ Consulta real a SUNAT requiere configuración especial (proxies, captcha, etc.)");
-            System.out.println("📋 Para implementación completa se requiere:");
-            System.out.println("   - Configuración de User-Agent");
-            System.out.println("   - Manejo de captchas");
-            System.out.println("   - Rotación de IPs/proxies");
-            System.out.println("   - Headers apropiados");
+            Document pageConsulta = Jsoup.connect(urlConsulta)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                .header("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
+                .header("Cache-Control", "no-cache")
+                .timeout(15000)
+                .get();
             
+            // Segundo paso: Hacer POST con el RUC
+            String urlResultado = "https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/jcrS00Alias";
+            
+            Document resultado = Jsoup.connect(urlResultado)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+                .header("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Origin", "https://e-consultaruc.sunat.gob.pe")
+                .header("Referer", urlConsulta)
+                .data("accion", "consPorRuc")
+                .data("nroRuc", ruc)
+                .data("activo", "1")
+                .post();
+            
+            // Parsear el resultado
+            ConsultaRucResponse.RucData datos = parsearRespuestaSunat(resultado, ruc);
+            
+            if (datos != null && datos.getRazonSocial() != null && !datos.getRazonSocial().trim().isEmpty()) {
+                System.out.println("✅ RUC encontrado en SUNAT: " + datos.getRazonSocial());
+                return datos;
+            }
+            
+            System.out.println("⚠️ No se encontraron datos válidos para el RUC en SUNAT");
             return null;
             
         } catch (Exception e) {
             System.out.println("❌ Error consultando SUNAT oficial: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
@@ -122,7 +146,7 @@ public class ConsultaRucService {
     }
 
     /**
-     * Parsea la respuesta HTML de SUNAT (para uso futuro)
+     * Parsea la respuesta HTML de SUNAT
      */
     private ConsultaRucResponse.RucData parsearRespuestaSunat(Document doc, String ruc) {
         try {
@@ -130,20 +154,50 @@ public class ConsultaRucService {
             data.setRuc(ruc);
             data.setTipoDocumento("6"); // RUC
             
-            // Buscar datos en diferentes formatos de tabla de SUNAT
-            Elements rows = doc.select("table tr, .panel-body tr, .table tr");
+            System.out.println("🔍 Analizando HTML de respuesta SUNAT...");
             
-            System.out.println("🔍 Procesando " + rows.size() + " filas de la respuesta SUNAT...");
+            // Buscar mensaje de error primero
+            Elements errorMsgs = doc.select(".alert-danger, .error, .mensaje-error");
+            if (!errorMsgs.isEmpty()) {
+                System.out.println("⚠️ SUNAT reporta error: " + errorMsgs.text());
+                return null;
+            }
             
-            for (Element row : rows) {
-                Elements cells = row.select("td, th");
-                if (cells.size() >= 2) {
-                    String campo = cells.get(0).text().trim().toLowerCase();
-                    String valor = cells.get(1).text().trim();
-                    
-                    if (!valor.isEmpty() && !valor.equals("-")) {
-                        // Mapear campos de SUNAT a nuestro modelo
-                        mapearCampoSunat(data, campo, valor);
+            // Buscar tabla de resultados con diferentes selectores
+            Elements tables = doc.select("table.listResult, table.list-group, table, .panel-body table");
+            System.out.println("📊 Encontradas " + tables.size() + " tablas en la respuesta");
+            
+            for (Element table : tables) {
+                Elements rows = table.select("tr");
+                System.out.println("🔍 Procesando tabla con " + rows.size() + " filas");
+                
+                for (Element row : rows) {
+                    Elements cells = row.select("td, th");
+                    if (cells.size() >= 2) {
+                        String campo = cells.get(0).text().trim();
+                        String valor = cells.get(1).text().trim();
+                        
+                        System.out.println("📋 Campo: [" + campo + "] -> Valor: [" + valor + "]");
+                        
+                        if (!valor.isEmpty() && !valor.equals("-") && !valor.equals("N/A")) {
+                            mapearCampoSunat(data, campo.toLowerCase(), valor);
+                        }
+                    }
+                }
+            }
+            
+            // Si no hay tabla, buscar datos en divs o spans
+            if (data.getRazonSocial() == null) {
+                System.out.println("🔍 Buscando datos en otros elementos HTML...");
+                
+                // Buscar por clases específicas de SUNAT
+                Elements dataElements = doc.select(".data-value, .field-value, span[class*='data'], td[class*='data']");
+                for (Element element : dataElements) {
+                    String texto = element.text().trim();
+                    if (texto.length() > 10 && !texto.matches("\\d+")) { // Probablemente razón social
+                        data.setRazonSocial(texto);
+                        System.out.println("✅ Razón social encontrada: " + texto);
+                        break;
                     }
                 }
             }
@@ -151,13 +205,16 @@ public class ConsultaRucService {
             // Validar que se encontraron datos mínimos
             if (data.getRazonSocial() == null || data.getRazonSocial().isEmpty()) {
                 System.out.println("❌ No se encontraron datos válidos en la respuesta de SUNAT");
+                System.out.println("🔍 HTML de respuesta (primeros 500 chars): " + doc.html().substring(0, Math.min(500, doc.html().length())));
                 return null;
             }
             
+            System.out.println("✅ Datos extraídos exitosamente de SUNAT");
             return data;
             
         } catch (Exception e) {
             System.out.println("❌ Error parseando respuesta SUNAT: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
