@@ -41,6 +41,14 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
         button {
             background-color: #007bff;
             color: white;
@@ -344,13 +352,85 @@
         }
         
         // ============= FUNCIÓN PLACEHOLDER PARA CREAR CLIENTE =============
-        function crearCliente() {
-            const razonSocial = document.getElementById('razonSocial').value;
+        async function crearCliente() {
+            const ruc = document.getElementById('numeroDocumento').value.trim();
+            const razonSocial = document.getElementById('razonSocial').value.trim();
+            const nombreComercial = document.getElementById('nombreComercial').value.trim();
+            const direccion = document.getElementById('direccion').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const telefono = document.getElementById('telefono').value.trim();
+            
             if (!razonSocial) {
                 mostrarMensaje('❌ Por favor complete al menos la razón social', 'error');
                 return;
             }
-            mostrarMensaje(`✅ Cliente "${razonSocial}" listo para crear`, 'success');
+            
+            try {
+                const clienteData = {
+                    tipoDocumento: document.getElementById('tipoDocumento').value,
+                    numeroDocumento: ruc,
+                    razonSocial: razonSocial,
+                    nombreComercial: nombreComercial || razonSocial,
+                    direccion: direccion,
+                    departamento: document.getElementById('departamento').value,
+                    provincia: document.getElementById('provincia').value,
+                    distrito: document.getElementById('distrito').value,
+                    ubigeo: document.getElementById('ubigeo').value,
+                    email: email,
+                    telefono: telefono
+                };
+
+                const response = await fetch('/api/clientes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(clienteData)
+                });
+
+                if (response.ok) {
+                    const cliente = await response.json();
+                    mostrarMensaje(`✅ Cliente "${razonSocial}" creado exitosamente con ID: ${cliente.id}`, 'success');
+                    console.log('Cliente creado:', cliente);
+                    
+                    // Mostrar botones de acción
+                    mostrarBotonesAccion(cliente.id, ruc);
+                } else {
+                    const error = await response.text();
+                    mostrarMensaje(`❌ Error al crear cliente: ${error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error creando cliente:', error);
+                mostrarMensaje(`❌ Error al crear cliente: ${error.message}`, 'error');
+            }
+        }
+
+        function mostrarBotonesAccion(clienteId, ruc) {
+            const contenedor = document.getElementById('botones-accion');
+            contenedor.innerHTML = `
+                <button onclick="verClienteCreado(${clienteId})" 
+                        style="background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-size: 14px;">
+                    👤 Ver Cliente
+                </button>
+                <button onclick="crearFacturaDirecta('${ruc}', ${clienteId})" 
+                        style="background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    📄 Crear Factura
+                </button>
+            `;
+        }
+
+        async function verClienteCreado(clienteId) {
+            try {
+                const response = await fetch(`/api/clientes/${clienteId}`);
+                if (response.ok) {
+                    const cliente = await response.json();
+                    mostrarMensaje(`✅ Cliente: ${cliente.razonSocial} - Estado: ACTIVO`, 'success');
+                } else {
+                    mostrarMensaje('❌ Error al consultar cliente', 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('❌ Error de conexión', 'error');
+            }
         }
         
         // ============= VALIDACIÓN EN TIEMPO REAL =============
@@ -583,9 +663,164 @@
             mostrarMensaje('🔙 Regresó a la consulta de RUC.', 'info');
         }
         
-        function crearFacturaDirecta(ruc) {
-            console.log('📄 Creando factura para RUC:', ruc);
-            window.location.href = `/nueva-factura.html?cliente_ruc=${ruc}`;
+        function crearFacturaDirecta(ruc, clienteId = null) {
+            console.log('📄 Creando factura para RUC:', ruc, 'Cliente ID:', clienteId);
+            
+            // Ocultar sección de consulta
+            const seccionConsulta = document.querySelector('.container:nth-child(2)');
+            if (seccionConsulta) {
+                seccionConsulta.style.display = 'none';
+            }
+            
+            // Crear formulario de factura
+            mostrarFormularioFactura(ruc, clienteId);
+        }
+
+        async function mostrarFormularioFactura(clienteRuc, clienteId = null) {
+            console.log('📋 Mostrando formulario de factura para RUC:', clienteRuc);
+            
+            // Buscar o crear el contenedor
+            let seccionFactura = document.getElementById('seccion-factura');
+            if (seccionFactura) {
+                seccionFactura.remove();
+            }
+            
+            const contenedorPrincipal = document.querySelector('body');
+            
+            // Crear nueva sección para factura
+            seccionFactura = document.createElement('div');
+            seccionFactura.id = 'seccion-factura';
+            seccionFactura.className = 'container';
+            
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const serieFactura = 'F001';
+            const numeroFactura = Math.floor(Math.random() * 9999) + 1;
+            
+            seccionFactura.innerHTML = `
+                <h2>📄 Nueva Factura Electrónica</h2>
+                <p><strong>Cliente RUC:</strong> ${clienteRuc}</p>
+                
+                <div class="form-group">
+                    <label for="serie-factura">Serie:</label>
+                    <input type="text" id="serie-factura" value="${serieFactura}" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero-factura">Número:</label>
+                    <input type="text" id="numero-factura" value="${numeroFactura.toString().padStart(8, '0')}" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha-emision">Fecha de Emisión:</label>
+                    <input type="date" id="fecha-emision" value="${fechaHoy}" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="concepto">Concepto / Descripción:</label>
+                    <input type="text" id="concepto" placeholder="Descripción del producto o servicio" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantidad">Cantidad:</label>
+                    <input type="number" id="cantidad" value="1" min="1" class="form-control" onchange="calcularTotalesFactura()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="precio-unitario">Precio Unitario:</label>
+                    <input type="number" id="precio-unitario" step="0.01" placeholder="0.00" class="form-control" onchange="calcularTotalesFactura()">
+                </div>
+                
+                <div class="form-group">
+                    <label for="subtotal">Subtotal:</label>
+                    <input type="number" id="subtotal" step="0.01" placeholder="0.00" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="igv">IGV (18%):</label>
+                    <input type="number" id="igv" step="0.01" placeholder="0.00" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="total">Total a Pagar:</label>
+                    <input type="number" id="total" step="0.01" placeholder="0.00" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" onclick="emitirFacturaElectronica('${clienteRuc}', ${clienteId})" style="background-color: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                        📄 Emitir Factura Electrónica
+                    </button>
+                    <button type="button" onclick="volverAConsulta()" style="background-color: #6c757d; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer;">
+                        🔙 Volver
+                    </button>
+                </div>
+                
+                <div id="mensaje-factura"></div>
+            `;
+            
+            contenedorPrincipal.appendChild(seccionFactura);
+            
+            // Enfocar primer campo
+            document.getElementById('concepto').focus();
+            
+            mostrarMensaje('✅ Formulario de factura listo. Complete los datos para emitir.', 'success');
+        }
+
+        function calcularTotalesFactura() {
+            const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
+            const precioUnitario = parseFloat(document.getElementById('precio-unitario').value) || 0;
+            const subtotal = cantidad * precioUnitario;
+            const igv = subtotal * 0.18;
+            const total = subtotal + igv;
+            
+            document.getElementById('subtotal').value = subtotal.toFixed(2);
+            document.getElementById('igv').value = igv.toFixed(2);
+            document.getElementById('total').value = total.toFixed(2);
+        }
+
+        async function emitirFacturaElectronica(clienteRuc, clienteId) {
+            console.log('📄 Emitiendo factura para cliente RUC:', clienteRuc);
+            
+            // Obtener datos del formulario
+            const datosFactura = {
+                clienteId: clienteId,
+                tipoDocumento: "01", // Factura
+                moneda: "PEN",
+                detalles: [{
+                    productoId: 1, // Producto genérico (necesitaremos crear uno)
+                    cantidad: parseFloat(document.getElementById('cantidad').value) || 1,
+                    descripcion: document.getElementById('concepto').value || "Producto/Servicio"
+                }]
+            };
+            
+            // Validar datos
+            if (!datosFactura.detalles[0].descripcion || datosFactura.detalles[0].cantidad <= 0) {
+                mostrarMensaje('⚠️ Complete todos los campos obligatorios con valores válidos.', 'warning');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('🔄 Emitiendo factura electrónica...', 'warning');
+                
+                const response = await fetch('/api/comprobantes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(datosFactura)
+                });
+
+                if (response.ok) {
+                    const factura = await response.json();
+                    mostrarMensaje(`✅ Factura electrónica emitida exitosamente. Serie: ${factura.serie}, Número: ${factura.numero}`, 'success');
+                    console.log('📄 Factura emitida:', factura);
+                } else {
+                    const error = await response.text();
+                    mostrarMensaje(`❌ Error al emitir factura: ${error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error emitiendo factura:', error);
+                mostrarMensaje(`❌ Error al emitir factura: ${error.message}`, 'error');
+            }
         }
         
         console.log('✅ JavaScript cargado completamente');
