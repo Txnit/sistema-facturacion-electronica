@@ -43,4 +43,15 @@ public class HomeController {
         response.put("timestamp", LocalDateTime.now().toString());
         return response;
     }
+
+    @GetMapping("/login")
+    public String login() {
+        return "forward:/login.html";
+    }
+    
+    @GetMapping("/logout")
+    public String logout() {
+        // Redirigir al login con parámetro logout para mostrar mensaje
+        return "redirect:/login.html?logout=true";
+    }
 }

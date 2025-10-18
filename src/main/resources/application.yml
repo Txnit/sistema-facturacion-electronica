@@ -1,5 +1,8 @@
 server:
   port: 8080
+  servlet:
+    session:
+      timeout: 10m # 10 minutos de timeout de sesión
 
 spring:
   application:

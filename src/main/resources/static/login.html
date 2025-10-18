@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Sistema Facturación Electrónica - Iniciar Sesión</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            color: #333;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .credentials-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .credentials-info h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .credential-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .credential-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .access-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .access-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .logout-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .session-expired {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .footer-info {
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .security-features {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .security-features h4 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .security-features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .security-features li {
+            padding: 5px 0;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .security-features li::before {
+            content: "🔒 ";
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">📋</div>
+        <h1 class="title">Sistema Facturación Electrónica</h1>
+        <p class="subtitle">Integración con SUNAT para emisión de comprobantes electrónicos</p>
+        
+        <!-- Mensaje de logout exitoso -->
+        <div id="logout-message" class="logout-message" style="display: none;">
+            ✅ <strong>Sesión cerrada correctamente</strong><br>
+            Su sesión se ha terminado por seguridad.
+        </div>
+        
+        <!-- Mensaje de sesión expirada -->
+        <div id="session-expired" class="session-expired" style="display: none;">
+            ⏰ <strong>Sesión Expirada</strong><br>
+            Su sesión se cerró automáticamente por inactividad (10 minutos).
+        </div>
+        
+        <div class="credentials-info">
+            <h3>🔑 Credenciales de Acceso</h3>
+            <div class="credential-item">
+                <strong>Usuario Demo:</strong> demo / demo123
+            </div>
+            <div class="credential-item">
+                <strong>Administrador:</strong> admin / admin123
+            </div>
+        </div>
+        
+        <button class="access-button" onclick="accederSistema()">
+            🚀 Acceder al Sistema
+        </button>
+        
+        <div class="security-features">
+            <h4>🔐 Características de Seguridad</h4>
+            <ul>
+                <li>Auto-logout por inactividad (10 minutos)</li>
+                <li>Advertencia de sesión a los 8 minutos</li>
+                <li>Una sesión activa por usuario</li>
+                <li>Invalidación automática de sesiones</li>
+            </ul>
+        </div>
+        
+        <div class="footer-info">
+            <strong>Sistema de Facturación Electrónica v1.0</strong><br>
+            Compatible con normativas SUNAT<br>
+            Desarrollado para empresas peruanas
+        </div>
+    </div>
+    
+    <script>
+        // Mostrar mensajes según parámetros URL
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('logout') === 'true') {
+                document.getElementById('logout-message').style.display = 'block';
+            }
+            
+            if (urlParams.get('expired') === 'true') {
+                document.getElementById('session-expired').style.display = 'block';
+            }
+        };
+        
+        function accederSistema() {
+            // Redirigir al sistema principal
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

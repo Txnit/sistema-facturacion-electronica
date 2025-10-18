@@ -43,13 +43,33 @@ public class SecurityConfig {
             
             // Configurar autenticación básica simple
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login.html", "/login").permitAll() // Permitir acceso a login
                 .requestMatchers("/h2-console/**").hasRole("ADMIN") // Solo admin puede ver H2
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated() // REQUIERE AUTENTICACIÓN PARA TODO
             )
             
-            // Usar solo HTTP Basic Auth (sin formulario para evitar loops)
-            .httpBasic(basic -> {})
+            // Usar solo HTTP Basic Auth con página de login personalizada
+            .httpBasic(basic -> basic
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.sendRedirect("/login.html?expired=true");
+                })
+            )
+            
+            // Configuración de logout
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            
+            // Configuración de sesión con timeout
+            .sessionManagement(session -> session
+                .maximumSessions(1) // Una sesión por usuario
+                .maxSessionsPreventsLogin(false) // Nueva sesión invalida la anterior
+            )
             
             // Configuración para H2 Console
             .headers(headers -> headers
