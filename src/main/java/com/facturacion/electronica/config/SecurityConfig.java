@@ -41,16 +41,29 @@ public class SecurityConfig {
             // Deshabilitar CSRF para facilitar las pruebas de API
             .csrf(AbstractHttpConfigurer::disable)
             
-            // Configurar autenticación solo para ciertos endpoints en producción
+            // Configurar autenticación - REQUERIR LOGIN PARA TODO
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll() // Permitir página de login y recursos estáticos
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers("/api/**").permitAll() // APIs públicas para demo
-                .anyRequest().permitAll() // Permitir acceso general para demo
+                .requestMatchers("/h2-console/**").hasRole("ADMIN") // Solo admin puede ver H2
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN") // Solo admin puede ver docs
+                .anyRequest().authenticated() // REQUIERE AUTENTICACIÓN PARA TODO
             )
             
-            // Configuración para login básico
+            // Configuración de login con formulario
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true)
+                .permitAll()
+            )
+            
+            // Configuración de logout
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            )
+            
+            // Configuración para login básico (backup)
             .httpBasic(basic -> {})
             
             // Configuración para H2 Console
