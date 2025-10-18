@@ -218,7 +218,27 @@
             }
             
             if (urlParams.get('expired') === 'true') {
-                document.getElementById('session-expired').style.display = 'block';
+                const reason = urlParams.get('reason');
+                const sessionExpiredDiv = document.getElementById('session-expired');
+                sessionExpiredDiv.style.display = 'block';
+                
+                // Personalizar mensaje según la razón
+                if (reason === 'inactivity') {
+                    sessionExpiredDiv.innerHTML = `
+                        ⏰ <strong>Sesión Expirada por Inactividad</strong><br>
+                        Su sesión se cerró automáticamente después de 10 minutos sin actividad por motivos de seguridad.
+                    `;
+                } else if (reason === 'server') {
+                    sessionExpiredDiv.innerHTML = `
+                        🔒 <strong>Sesión Expirada en Servidor</strong><br>
+                        Su sesión fue invalidada por el servidor. Esto puede deberse a timeout o sesión duplicada.
+                    `;
+                } else {
+                    sessionExpiredDiv.innerHTML = `
+                        ⏰ <strong>Sesión Expirada</strong><br>
+                        Su sesión se ha cerrado automáticamente por seguridad debido a inactividad (10 minutos).
+                    `;
+                }
             }
         };
         

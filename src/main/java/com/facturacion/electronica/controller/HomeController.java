@@ -54,4 +54,14 @@ public class HomeController {
         // Redirigir al login con parámetro logout para mostrar mensaje
         return "redirect:/login.html?logout=true";
     }
+    
+    @GetMapping("/api/session/check")
+    @ResponseBody
+    public Map<String, Object> checkSession() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", true);
+        response.put("timestamp", LocalDateTime.now());
+        response.put("message", "Session is active");
+        return response;
+    }
 }
