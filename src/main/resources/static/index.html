@@ -6,60 +6,97 @@
     <title>Sistema de Facturación Electrónica - SUNAT</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
             margin-bottom: 20px;
         }
         h1, h2 {
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 12px;
+            margin-top: 0;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.8rem;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
+            position: relative;
         }
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
         }
         input, select, textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
             box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
         }
         .form-control {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
             box-sizing: border-box;
             font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
         }
         button {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            margin-right: 10px;
+            margin: 5px 10px 5px 0;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.2);
         }
         button:hover {
-            background-color: #0056b3;
+            background: linear-gradient(135deg, #0056b3, #003d82);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         .success {
             color: green;
@@ -87,27 +124,67 @@
         }
         .ruc-container {
             display: flex;
-            gap: 10px;
-            align-items: center;
+            gap: 12px;
+            align-items: end;
         }
         .ruc-container input {
             flex: 1;
         }
         .btn-consultar {
-            background: #28a745;
+            background: linear-gradient(135deg, #28a745, #1e7e34);
             color: white;
-            padding: 8px 12px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             white-space: nowrap;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(40,167,69,0.2);
         }
         .btn-consultar:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #1e7e34, #155724);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40,167,69,0.3);
         }
         .btn-consultar:disabled {
             background: #6c757d;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Grid para campos de dirección */
+        .direccion-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .direccion-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Grid para campos básicos */
+        .basico-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .basico-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Centrado de botones de acción */
+        #botones-accion {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         
         /* Estilos para formulario de factura */
@@ -173,12 +250,14 @@
             <small style="color: #666;">Ingrese RUC de 11 dígitos para autocompletar datos de SUNAT</small>
         </div>
         
-        <div class="form-group">
-            <label>Tipo Documento:</label>
-            <select id="tipoDocumento">
-                <option value="06" selected>RUC</option>
-                <option value="01">DNI</option>
-            </select>
+        <div class="basico-grid">
+            <div class="form-group">
+                <label>Tipo Documento:</label>
+                <select id="tipoDocumento">
+                    <option value="06" selected>RUC</option>
+                    <option value="01">DNI</option>
+                </select>
+            </div>
         </div>
         
         <div class="form-group">
@@ -193,44 +272,56 @@
         
         <div class="form-group">
             <label>Dirección:</label>
-            <input type="text" id="direccion" placeholder="Av. Principal 123">
+            <input type="text" id="direccion" placeholder="Av. Principal 123, San Isidro, Lima">
         </div>
         
-        <div class="form-group">
-            <label>Departamento:</label>
-            <input type="text" id="departamento" placeholder="Lima">
+        <div class="direccion-grid">
+            <div class="form-group">
+                <label>Departamento:</label>
+                <input type="text" id="departamento" placeholder="Lima">
+            </div>
+            
+            <div class="form-group">
+                <label>Provincia:</label>
+                <input type="text" id="provincia" placeholder="Lima">
+            </div>
+            
+            <div class="form-group">
+                <label>Distrito:</label>
+                <input type="text" id="distrito" placeholder="San Isidro">
+            </div>
         </div>
         
-        <div class="form-group">
-            <label>Provincia:</label>
-            <input type="text" id="provincia" placeholder="Lima">
+        <div class="basico-grid">
+            <div class="form-group">
+                <label>Ubigeo:</label>
+                <input type="text" id="ubigeo" placeholder="150127">
+            </div>
         </div>
         
-        <div class="form-group">
-            <label>Distrito:</label>
-            <input type="text" id="distrito" placeholder="San Isidro">
+        <div class="basico-grid">
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" placeholder="contacto@empresa.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Teléfono:</label>
+                <input type="text" id="telefono" placeholder="01-2345678">
+            </div>
         </div>
         
-        <div class="form-group">
-            <label>Ubigeo:</label>
-            <input type="text" id="ubigeo" placeholder="150127">
+        <div style="text-align: center; margin: 25px 0;">
+            <button onclick="crearCliente()" style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                ➕ Crear Cliente
+            </button>
+            <button onclick="limpiarFormulario()" style="background: linear-gradient(135deg, #6c757d, #545b62);">
+                🧹 Limpiar Formulario
+            </button>
         </div>
-        
-        <div class="form-group">
-            <label>Email:</label>
-            <input type="email" id="email" placeholder="contacto@empresa.com">
-        </div>
-        
-        <div class="form-group">
-            <label>Teléfono:</label>
-            <input type="text" id="telefono" placeholder="01-2345678">
-        </div>
-        
-        <button onclick="crearCliente()">➕ Crear Cliente</button>
-        <button onclick="limpiarFormulario()">🧹 Limpiar</button>
         
         <div id="mensaje-cliente"></div>
-        <div id="botones-accion" style="margin-top: 15px; text-align: center;"></div>
+        <div id="botones-accion"></div>
     </div>
 
     <script>
@@ -540,59 +631,70 @@
             
             seccionFactura.innerHTML = `
                 <h2>📄 Nueva Factura Electrónica</h2>
-                <p><strong>Cliente RUC:</strong> ${clienteRuc}</p>
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                    <strong style="color: #1565c0;">Cliente RUC:</strong> ${clienteRuc}
+                </div>
                 
-                <div class="form-group">
-                    <label>Serie:</label>
-                    <input type="text" id="serie-factura" value="F001" class="form-control" readonly>
+                <div class="basico-grid">
+                    <div class="form-group">
+                        <label>Serie:</label>
+                        <input type="text" id="serie-factura" value="F001" class="form-control" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Número:</label>
+                        <input type="text" id="numero-factura" value="${numeroFactura.toString().padStart(8, '0')}" class="form-control" readonly>
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>Número:</label>
-                    <input type="text" id="numero-factura" value="${numeroFactura.toString().padStart(8, '0')}" class="form-control" readonly>
-                </div>
-                
-                <div class="form-group">
-                    <label>Fecha:</label>
+                    <label>Fecha de Emisión:</label>
                     <input type="date" id="fecha-emision" value="${fechaHoy}" class="form-control">
                 </div>
                 
                 <div class="form-group">
-                    <label>Concepto:</label>
-                    <input type="text" id="concepto" placeholder="Descripción del producto o servicio" class="form-control">
+                    <label>Concepto / Descripción del Servicio o Producto:</label>
+                    <input type="text" id="concepto" placeholder="Ej: Servicios de consultoría, desarrollo de software..." class="form-control">
                 </div>
                 
-                <div class="form-group">
-                    <label>Cantidad:</label>
-                    <input type="number" id="cantidad" value="1" min="1" class="form-control" onchange="calcularTotalesFactura()">
+                <div class="basico-grid">
+                    <div class="form-group">
+                        <label>Cantidad:</label>
+                        <input type="number" id="cantidad" value="1" min="1" class="form-control" onchange="calcularTotalesFactura()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Precio Unitario (S/):</label>
+                        <input type="number" id="precio-unitario" step="0.01" placeholder="0.00" class="form-control" onchange="calcularTotalesFactura()">
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Precio Unitario:</label>
-                    <input type="number" id="precio-unitario" step="0.01" placeholder="0.00" class="form-control" onchange="calcularTotalesFactura()">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h4 style="margin-top: 0; color: #495057;">💰 Cálculo de Totales</h4>
+                    <div class="basico-grid">
+                        <div class="form-group">
+                            <label>Subtotal (S/):</label>
+                            <input type="number" id="subtotal" step="0.01" class="form-control" readonly style="background: #e9ecef;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>IGV 18% (S/):</label>
+                            <input type="number" id="igv" step="0.01" class="form-control" readonly style="background: #e9ecef;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><strong>Total a Pagar (S/):</strong></label>
+                        <input type="number" id="total" step="0.01" class="form-control" readonly style="background: #d4edda; font-weight: bold; font-size: 16px;">
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Subtotal:</label>
-                    <input type="number" id="subtotal" step="0.01" class="form-control" readonly>
-                </div>
-                
-                <div class="form-group">
-                    <label>IGV (18%):</label>
-                    <input type="number" id="igv" step="0.01" class="form-control" readonly>
-                </div>
-                
-                <div class="form-group">
-                    <label>Total:</label>
-                    <input type="number" id="total" step="0.01" class="form-control" readonly>
-                </div>
-                
-                <div class="form-group">
-                    <button onclick="emitirFacturaElectronica('${clienteRuc}', ${clienteId})" style="background: #007bff; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
-                        📄 Emitir Factura
+                <div style="text-align: center; margin: 25px 0;">
+                    <button onclick="emitirFacturaElectronica('${clienteRuc}', ${clienteId})" style="background: linear-gradient(135deg, #28a745, #1e7e34); color: white; padding: 15px 35px; border: none; border-radius: 8px; cursor: pointer; margin-right: 15px; font-weight: 600; font-size: 16px;">
+                        📄 Emitir Factura Electrónica
                     </button>
-                    <button onclick="volverAConsulta()" style="background: #6c757d; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer;">
-                        🔙 Volver
+                    <button onclick="volverAConsulta()" style="background: linear-gradient(135deg, #6c757d, #545b62); color: white; padding: 15px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔙 Volver a Consulta
                     </button>
                 </div>
             `;
