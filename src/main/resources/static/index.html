@@ -468,38 +468,127 @@
             mostrarMensaje('🔍 Consultando RUC en SUNAT...', 'warning');
             
             try {
-                const response = await fetch(`/api/consulta-ruc/${ruc}`);
+                // Obtener credenciales de la sesión actual
+                const auth = sessionStorage.getItem('auth');
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                };
+                
+                // Agregar autenticación si está disponible
+                if (auth) {
+                    headers['Authorization'] = 'Basic ' + auth;
+                }
+                
+                console.log('🔍 Consultando RUC:', ruc);
+                const response = await fetch(`/api/consulta-ruc/${ruc}`, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'same-origin' // Incluir cookies de sesión
+                });
+                
+                console.log('📡 Response status:', response.status);
                 
                 if (response.ok) {
                     const result = await response.json();
+                    console.log('📋 Datos recibidos:', result);
                     
                     if (result.success && result.data) {
                         const data = result.data;
                         
-                        // Autocompletar campos
-                        document.getElementById('tipoDocumento').value = '06';
-                        document.getElementById('razonSocial').value = data.razonSocial || '';
-                        document.getElementById('nombreComercial').value = data.nombreComercial || data.razonSocial || '';
-                        document.getElementById('direccion').value = data.direccion || '';
-                        document.getElementById('departamento').value = data.departamento || '';
-                        document.getElementById('provincia').value = data.provincia || '';
-                        document.getElementById('distrito').value = data.distrito || '';
-                        document.getElementById('ubigeo').value = data.ubigeo || '';
+                        // Limpiar campos primero
+                        limpiarCamposCliente();
                         
-                        mostrarMensaje(`✅ Datos encontrados: ${data.razonSocial} - Estado: ${data.estado}`, 'success');
+                        // Autocompletar campos básicos
+                        const tipoDocSelect = document.getElementById('tipoDocumento');
+                        if (tipoDocSelect) {
+                            tipoDocSelect.value = '06'; // RUC
+                        }
+                        
+                        const razonSocialField = document.getElementById('razonSocial');
+                        if (razonSocialField && data.razonSocial) {
+                            razonSocialField.value = data.razonSocial;
+                        }
+                        
+                        const nombreComercialField = document.getElementById('nombreComercial');
+                        if (nombreComercialField) {
+                            nombreComercialField.value = data.nombreComercial || data.razonSocial || '';
+                        }
+                        
+                        const direccionField = document.getElementById('direccion');
+                        if (direccionField && data.direccion) {
+                            direccionField.value = data.direccion;
+                        }
+                        
+                        const departamentoField = document.getElementById('departamento');
+                        if (departamentoField && data.departamento) {
+                            departamentoField.value = data.departamento;
+                        }
+                        
+                        const provinciaField = document.getElementById('provincia');
+                        if (provinciaField && data.provincia) {
+                            provinciaField.value = data.provincia;
+                        }
+                        
+                        const distritoField = document.getElementById('distrito');
+                        if (distritoField && data.distrito) {
+                            distritoField.value = data.distrito;
+                        }
+                        
+                        const ubigeoField = document.getElementById('ubigeo');
+                        if (ubigeoField && data.ubigeo) {
+                            ubigeoField.value = data.ubigeo;
+                        }
+                        
+                        // Campos adicionales si están disponibles
+                        const emailField = document.getElementById('email');
+                        if (emailField && data.email) {
+                            emailField.value = data.email;
+                        }
+                        
+                        const telefonoField = document.getElementById('telefono');
+                        if (telefonoField && data.telefono) {
+                            telefonoField.value = data.telefono;
+                        }
+                        
+                        // Mostrar mensaje de éxito con más información
+                        const estadoText = data.estado || 'ACTIVO';
+                        const condicionText = data.condicion || 'HABIDO';
+                        mostrarMensaje(`✅ ${data.razonSocial}<br>Estado: ${estadoText} - Condición: ${condicionText}`, 'success');
+                        
+                        // Mostrar botón de detalle
                         mostrarBotonDetalle(ruc);
+                        
+                        console.log('✅ Autocompletado exitoso para:', data.razonSocial);
                     } else {
-                        mostrarMensaje(`⚠️ ${result.message || 'RUC no encontrado'}`, 'warning');
+                        mostrarMensaje(`⚠️ ${result.message || 'RUC no encontrado en SUNAT'}`, 'warning');
+                        limpiarCamposCliente();
                     }
+                } else if (response.status === 401 || response.status === 403) {
+                    mostrarMensaje('🔒 Sesión expirada. Recargue la página para iniciar sesión nuevamente.', 'error');
                 } else {
-                    throw new Error(`Error ${response.status}`);
+                    throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
+                console.error('❌ Error en consulta RUC:', error);
                 mostrarMensaje(`❌ Error al consultar RUC: ${error.message}`, 'error');
+                limpiarCamposCliente();
             } finally {
                 btnConsultar.disabled = false;
                 btnConsultar.innerHTML = '🔍 Consultar RUC';
             }
+        }
+        
+        // ============= FUNCIÓN PARA LIMPIAR CAMPOS CLIENTE =============
+        function limpiarCamposCliente() {
+            const campos = ['razonSocial', 'nombreComercial', 'direccion', 
+                           'departamento', 'provincia', 'distrito', 'ubigeo', 'email', 'telefono'];
+            campos.forEach(campo => {
+                const element = document.getElementById(campo);
+                if (element) {
+                    element.value = '';
+                }
+            });
         }
         
         // ============= FUNCIÓN PARA MOSTRAR MENSAJES =============
@@ -575,21 +664,64 @@
             `;
         }
         
-        // ============= VALIDACIÓN EN TIEMPO REAL =============
+        // ============= INICIALIZACIÓN Y VALIDACIÓN =============
         document.addEventListener('DOMContentLoaded', function() {
+            // Configurar validación en tiempo real para RUC
             const rucInput = document.getElementById('numeroDocumento');
             const btnConsultar = document.getElementById('btnConsultarRuc');
             
-            rucInput.addEventListener('input', function() {
-                const ruc = this.value.trim();
-                const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+            if (rucInput && btnConsultar) {
+                rucInput.addEventListener('input', function() {
+                    const ruc = this.value.trim();
+                    const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+                    
+                    btnConsultar.disabled = !esValido;
+                    btnConsultar.style.opacity = esValido ? '1' : '0.6';
+                    
+                    // Limpiar campos si el RUC no es válido
+                    if (!esValido && ruc.length > 0) {
+                        limpiarCamposCliente();
+                    }
+                });
                 
-                btnConsultar.disabled = !esValido;
-                btnConsultar.style.opacity = esValido ? '1' : '0.6';
-            });
+                // Auto-consulta cuando el RUC tiene 11 dígitos válidos
+                rucInput.addEventListener('blur', function() {
+                    const ruc = this.value.trim();
+                    if (ruc.length === 11 && /^\d{11}$/.test(ruc)) {
+                        // Auto-consultar después de un breve delay
+                        setTimeout(() => {
+                            consultarRuc();
+                        }, 500);
+                    }
+                });
+            }
             
-            mostrarMensaje('🚀 Sistema listo. Ingrese un RUC para autocompletar datos de SUNAT', 'success');
+            // Inicializar autenticación automática para desarrollo
+            inicializarAutenticacion();
+            
+            mostrarMensaje('🚀 Sistema de Facturación Electrónica iniciado correctamente', 'success');
         });
+        
+        // ============= AUTENTICACIÓN AUTOMÁTICA =============
+        async function inicializarAutenticacion() {
+            // Solo para desarrollo - en producción esto debe manejarse diferente
+            if (!sessionStorage.getItem('auth')) {
+                try {
+                    // Usar credenciales demo para autenticación automática
+                    const demoAuth = btoa('demo:demo123');
+                    sessionStorage.setItem('auth', demoAuth);
+                    
+                    console.log('🔑 Autenticación demo configurada para desarrollo');
+                    mostrarMensaje('🔑 Sesión de desarrollo activa - Sistema listo', 'success');
+                } catch (error) {
+                    console.warn('⚠️ No se pudo configurar autenticación automática:', error);
+                    mostrarMensaje('⚠️ Inicie sesión manualmente si es necesario', 'warning');
+                }
+            } else {
+                console.log('🔑 Sesión existente encontrada');
+                mostrarMensaje('🔑 Sesión activa - Sistema listo', 'success');
+            }
+        }
         
         function mostrarBotonDetalle(ruc) {
             const contenedor = document.getElementById('botones-accion');

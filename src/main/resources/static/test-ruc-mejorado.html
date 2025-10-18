@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Prueba RUC - Sistema Facturación</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .rucs-ejemplo {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .rucs-ejemplo h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .ruc-item {
+            background: white;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .ruc-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+        .ruc-number {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🔍 Prueba de Consulta RUC</h1>
+        <p style="text-align: center; color: #666;">
+            Pruebe la funcionalidad de consulta RUC del Sistema de Facturación Electrónica
+        </p>
+        
+        <div class="form-group">
+            <label for="rucInput">RUC a consultar:</label>
+            <input type="text" id="rucInput" placeholder="Ingrese RUC de 11 dígitos" maxlength="11">
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn" onclick="consultarRuc()" id="btnConsultar">🔍 Consultar RUC</button>
+            <button class="btn" onclick="limpiar()">🧹 Limpiar</button>
+        </div>
+        
+        <div class="rucs-ejemplo">
+            <h4>📋 RUCs de ejemplo para probar:</h4>
+            <div class="ruc-item" onclick="probarRuc('20100047218')">
+                <span class="ruc-number">20100047218</span> - Banco de Crédito del Perú
+            </div>
+            <div class="ruc-item" onclick="probarRuc('20100017491')">
+                <span class="ruc-number">20100017491</span> - Telefónica del Perú S.A.A.
+            </div>
+            <div class="ruc-item" onclick="probarRuc('20568849559')">
+                <span class="ruc-number">20568849559</span> - JL7 Systems S.A.C.
+            </div>
+            <div class="ruc-item" onclick="probarRuc('20123456789')">
+                <span class="ruc-number">20123456789</span> - RUC de prueba (generará datos simulados)
+            </div>
+        </div>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        // Configurar autenticación demo
+        const demoAuth = btoa('demo:demo123');
+        
+        async function consultarRuc() {
+            const ruc = document.getElementById('rucInput').value.trim();
+            const btnConsultar = document.getElementById('btnConsultar');
+            const resultado = document.getElementById('resultado');
+            
+            // Validar RUC
+            if (!ruc || ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+                mostrarResultado('❌ Por favor ingrese un RUC válido de 11 dígitos', 'error');
+                return;
+            }
+            
+            // Cambiar estado del botón
+            btnConsultar.disabled = true;
+            btnConsultar.innerHTML = '⏳ Consultando...';
+            mostrarResultado('🔍 Consultando RUC en SUNAT...', 'warning');
+            
+            try {
+                const response = await fetch(`/api/consulta-ruc/${ruc}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Basic ' + demoAuth,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        
+                        // Formatear datos para mostrar
+                        const info = `✅ CONSULTA EXITOSA
+                        
+🏢 DATOS DE LA EMPRESA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RUC: ${data.ruc}
+Razón Social: ${data.razonSocial}
+Nombre Comercial: ${data.nombreComercial || 'No especificado'}
+Estado: ${data.estado || 'ACTIVO'}
+Condición: ${data.condicion || 'HABIDO'}
+
+📍 UBICACIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dirección: ${data.direccion || 'No especificado'}
+Departamento: ${data.departamento || 'No especificado'}
+Provincia: ${data.provincia || 'No especificado'}
+Distrito: ${data.distrito || 'No especificado'}
+Ubigeo: ${data.ubigeo || 'No especificado'}
+
+${data.telefono ? `📞 Teléfono: ${data.telefono}` : ''}
+${data.email ? `📧 Email: ${data.email}` : ''}
+
+💼 INFORMACIÓN TRIBUTARIA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${data.tipoContribuyente ? `Tipo: ${data.tipoContribuyente}` : ''}
+${data.fechaInscripcion ? `Fecha Inscripción: ${data.fechaInscripcion}` : ''}
+${data.fechaInicioActividades ? `Inicio Actividades: ${data.fechaInicioActividades}` : ''}
+${data.actividadEconomica ? `Actividad: ${data.actividadEconomica}` : ''}
+
+📄 COMPROBANTES ELECTRÓNICOS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${data.comprobantesAutorizados ? `Autorizados: ${data.comprobantesAutorizados}` : ''}
+${data.sistemaEmisionElectronica ? `Sistema: ${data.sistemaEmisionElectronica}` : ''}
+${data.emisorElectronicoDesde ? `Emisor desde: ${data.emisorElectronicoDesde}` : ''}
+Puede emitir electrónicamente: ${data.puedeEmitirElectronicamente ? 'SÍ' : 'NO'}`;
+                        
+                        mostrarResultado(info, 'success');
+                    } else {
+                        mostrarResultado(`⚠️ ${result.message || 'RUC no encontrado'}`, 'warning');
+                    }
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                mostrarResultado(`❌ Error al consultar RUC: ${error.message}`, 'error');
+            } finally {
+                btnConsultar.disabled = false;
+                btnConsultar.innerHTML = '🔍 Consultar RUC';
+            }
+        }
+        
+        function probarRuc(ruc) {
+            document.getElementById('rucInput').value = ruc;
+            consultarRuc();
+        }
+        
+        function limpiar() {
+            document.getElementById('rucInput').value = '';
+            document.getElementById('resultado').innerHTML = '';
+        }
+        
+        function mostrarResultado(mensaje, tipo) {
+            const resultado = document.getElementById('resultado');
+            const claseCSS = tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'error';
+            resultado.innerHTML = `<div class="result ${claseCSS}">${mensaje}</div>`;
+        }
+        
+        // Configurar validación en tiempo real
+        document.getElementById('rucInput').addEventListener('input', function() {
+            const ruc = this.value.trim();
+            const esValido = ruc.length === 11 && /^\d{11}$/.test(ruc);
+            const btnConsultar = document.getElementById('btnConsultar');
+            
+            btnConsultar.disabled = !esValido;
+            btnConsultar.style.opacity = esValido ? '1' : '0.6';
+        });
+        
+        // Permitir Enter para consultar
+        document.getElementById('rucInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                consultarRuc();
+            }
+        });
+    </script>
+</body>
+</html>
