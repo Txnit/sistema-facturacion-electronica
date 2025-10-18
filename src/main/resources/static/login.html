@@ -168,18 +168,28 @@
         </div>
         
         <div class="credentials-info">
-            <h3>🔑 Credenciales de Acceso</h3>
-            <div class="credential-item">
-                <strong>Usuario Demo:</strong> demo / demo123
-            </div>
-            <div class="credential-item">
-                <strong>Administrador:</strong> admin / admin123
-            </div>
+            <h3>🔑 Acceso Autorizado</h3>
+            <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                Solo usuarios autorizados pueden acceder al sistema.<br>
+                Contacte al administrador para obtener credenciales de acceso.
+            </p>
         </div>
         
-        <button class="access-button" onclick="accederSistema()">
-            🚀 Acceder al Sistema
-        </button>
+        <form id="loginForm" onsubmit="iniciarSesion(event)">
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="username" placeholder="👤 Usuario" required 
+                       style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; 
+                              font-size: 16px; margin-bottom: 15px; box-sizing: border-box;">
+                
+                <input type="password" id="password" placeholder="🔒 Contraseña" required 
+                       style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; 
+                              font-size: 16px; box-sizing: border-box;">
+            </div>
+            
+            <button type="submit" class="access-button" id="loginButton">
+                🚀 Iniciar Sesión
+            </button>
+        </form>
         
         <div class="security-features">
             <h4>🔐 Características de Seguridad</h4>
@@ -212,9 +222,76 @@
             }
         };
         
-        function accederSistema() {
-            // Redirigir al sistema principal
-            window.location.href = '/';
+        async function iniciarSesion(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+            
+            // Deshabilitar botón durante el login
+            loginButton.disabled = true;
+            loginButton.innerHTML = '🔄 Iniciando sesión...';
+            
+            try {
+                // Intentar acceder con las credenciales
+                const response = await fetch('/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+                
+                if (response.ok) {
+                    // Login exitoso - guardar credenciales en memoria para la sesión
+                    sessionStorage.setItem('auth', btoa(username + ':' + password));
+                    
+                    // Redirigir al sistema principal
+                    window.location.href = '/';
+                } else {
+                    // Error de autenticación
+                    mostrarError('❌ Usuario o contraseña incorrectos');
+                }
+            } catch (error) {
+                mostrarError('❌ Error de conexión. Intente nuevamente.');
+            } finally {
+                // Rehabilitar botón
+                loginButton.disabled = false;
+                loginButton.innerHTML = '🚀 Iniciar Sesión';
+            }
+        }
+        
+        function mostrarError(mensaje) {
+            // Remover error anterior si existe
+            const errorAnterior = document.getElementById('error-message');
+            if (errorAnterior) {
+                errorAnterior.remove();
+            }
+            
+            // Crear nuevo mensaje de error
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'error-message';
+            errorDiv.style.cssText = `
+                background: #f8d7da;
+                color: #721c24;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                border-left: 4px solid #dc3545;
+                font-size: 14px;
+            `;
+            errorDiv.textContent = mensaje;
+            
+            // Insertar antes del formulario
+            const form = document.getElementById('loginForm');
+            form.parentNode.insertBefore(errorDiv, form);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
         }
     </script>
 </body>
