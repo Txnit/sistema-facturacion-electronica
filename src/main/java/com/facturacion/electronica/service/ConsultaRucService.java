@@ -75,31 +75,69 @@ public class ConsultaRucService {
         try {
             System.out.println("🏛️ Consultando página oficial de SUNAT para RUC: " + ruc);
             
-            // Primer paso: Obtener la página de consulta
+            // Método alternativo: Usar API REST no oficial pero funcional
+            try {
+                ConsultaRucResponse.RucData datosApi = consultarApiAlternativa(ruc);
+                if (datosApi != null) {
+                    return datosApi;
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ API alternativa no disponible: " + e.getMessage());
+            }
+            
+            // Método principal: Scraping directo a SUNAT
             String urlConsulta = "https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp";
             
             Document pageConsulta = Jsoup.connect(urlConsulta)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
                 .header("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
                 .header("Cache-Control", "no-cache")
-                .timeout(15000)
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Upgrade-Insecure-Requests", "1")
+                .timeout(20000)
+                .followRedirects(true)
                 .get();
             
-            // Segundo paso: Hacer POST con el RUC
+            // Obtener tokens y datos de sesión si existen
+            String csrfToken = "";
+            Elements tokenElements = pageConsulta.select("input[name='_token'], meta[name='csrf-token']");
+            if (!tokenElements.isEmpty()) {
+                csrfToken = tokenElements.first().attr("content").isEmpty() ? 
+                           tokenElements.first().attr("value") : tokenElements.first().attr("content");
+                System.out.println("🔑 Token CSRF obtenido: " + csrfToken.substring(0, Math.min(10, csrfToken.length())) + "...");
+            }
+            
+            // Simular espera humana
+            Thread.sleep(1000 + (int)(Math.random() * 2000));
+            
+            // Hacer POST con el RUC
             String urlResultado = "https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/jcrS00Alias";
             
-            Document resultado = Jsoup.connect(urlResultado)
+            var connection = Jsoup.connect(urlResultado)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
                 .header("Accept-Language", "es-ES,es;q=0.9,en;q=0.8")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Origin", "https://e-consultaruc.sunat.gob.pe")
                 .header("Referer", urlConsulta)
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "same-origin")
+                .header("Upgrade-Insecure-Requests", "1")
                 .data("accion", "consPorRuc")
                 .data("nroRuc", ruc)
                 .data("activo", "1")
-                .post();
+                .timeout(20000)
+                .followRedirects(true);
+            
+            if (!csrfToken.isEmpty()) {
+                connection.data("_token", csrfToken);
+            }
+            
+            Document resultado = connection.post();
             
             // Parsear el resultado
             ConsultaRucResponse.RucData datos = parsearRespuestaSunat(resultado, ruc);
@@ -115,6 +153,74 @@ public class ConsultaRucService {
         } catch (Exception e) {
             System.out.println("❌ Error consultando SUNAT oficial: " + e.getMessage());
             e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Consulta RUC usando API alternativa confiable
+     */
+    private ConsultaRucResponse.RucData consultarApiAlternativa(String ruc) {
+        try {
+            System.out.println("🔍 Probando API alternativa para RUC: " + ruc);
+            
+            // API pública gratuita (sin autenticación)
+            String url = "https://api.apis.net.pe/v1/ruc?numero=" + ruc;
+            
+            Document response = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (compatible; SistemaFacturacion/1.0)")
+                .header("Accept", "application/json")
+                .timeout(10000)
+                .ignoreContentType(true)
+                .get();
+            
+            String jsonResponse = response.text();
+            System.out.println("📡 Respuesta API: " + jsonResponse.substring(0, Math.min(100, jsonResponse.length())) + "...");
+            
+            // Parsear JSON básico manualmente (evitamos dependencias adicionales)
+            if (jsonResponse.contains("\"razonSocial\"") && !jsonResponse.contains("\"error\"")) {
+                ConsultaRucResponse.RucData data = new ConsultaRucResponse.RucData();
+                data.setRuc(ruc);
+                data.setTipoDocumento("6"); // RUC
+                
+                // Extraer razón social
+                String razonSocial = extraerCampoJson(jsonResponse, "razonSocial");
+                if (razonSocial != null && !razonSocial.isEmpty()) {
+                    data.setRazonSocial(razonSocial);
+                    data.setEstado(extraerCampoJson(jsonResponse, "estado"));
+                    data.setCondicion(extraerCampoJson(jsonResponse, "condicion"));
+                    data.setDireccion(extraerCampoJson(jsonResponse, "direccion"));
+                    data.setDepartamento(extraerCampoJson(jsonResponse, "departamento"));
+                    data.setProvincia(extraerCampoJson(jsonResponse, "provincia"));
+                    data.setDistrito(extraerCampoJson(jsonResponse, "distrito"));
+                    
+                    System.out.println("✅ Datos obtenidos de API alternativa: " + razonSocial);
+                    return data;
+                }
+            }
+            
+            System.out.println("⚠️ API alternativa no retornó datos válidos");
+            return null;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error en API alternativa: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Extrae un campo de un JSON de forma simple
+     */
+    private String extraerCampoJson(String json, String campo) {
+        try {
+            String pattern = "\"" + campo + "\"\\s*:\\s*\"([^\"]+)\"";
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher m = p.matcher(json);
+            if (m.find()) {
+                return m.group(1).trim();
+            }
+            return null;
+        } catch (Exception e) {
             return null;
         }
     }
@@ -156,10 +262,46 @@ public class ConsultaRucService {
             
             System.out.println("🔍 Analizando HTML de respuesta SUNAT...");
             
-            // Buscar mensaje de error primero
-            Elements errorMsgs = doc.select(".alert-danger, .error, .mensaje-error");
+            // Buscar mensajes específicos de SUNAT
+            String htmlText = doc.text().toLowerCase();
+            String htmlContent = doc.html().toLowerCase();
+            
+            // Verificar errores específicos de SUNAT
+            if (htmlText.contains("surgieron problemas al procesar la consulta") ||
+                htmlText.contains("error al procesar") ||
+                htmlText.contains("sistema no disponible") ||
+                htmlText.contains("servicio temporalmente no disponible")) {
+                
+                System.out.println("⚠️ SUNAT tiene problemas técnicos temporales");
+                return null;
+            }
+            
+            if (htmlText.contains("captcha") || htmlText.contains("verificación") ||
+                htmlContent.contains("recaptcha") || htmlContent.contains("captcha")) {
+                
+                System.out.println("🛡️ SUNAT requiere verificación CAPTCHA (protección anti-bot)");
+                return null;
+            }
+            
+            if (htmlText.contains("ruc no válido") || htmlText.contains("ruc inexistente") ||
+                htmlText.contains("no se encontró") || htmlText.contains("ruc no encontrado")) {
+                
+                System.out.println("❌ RUC no existe en base de datos SUNAT");
+                return null;
+            }
+            
+            // Buscar mensaje de error general
+            Elements errorMsgs = doc.select(".alert-danger, .error, .mensaje-error, .alert, .warning");
             if (!errorMsgs.isEmpty()) {
-                System.out.println("⚠️ SUNAT reporta error: " + errorMsgs.text());
+                String errorText = errorMsgs.text();
+                System.out.println("⚠️ SUNAT reporta: " + errorText);
+                
+                // Determinar tipo de error
+                if (errorText.toLowerCase().contains("problemas al procesar")) {
+                    System.out.println("💡 Sugerencia: SUNAT puede estar sobrecargado. Reintentar más tarde.");
+                } else if (errorText.toLowerCase().contains("captcha")) {
+                    System.out.println("💡 Sugerencia: SUNAT detectó automatización. Usar con moderación.");
+                }
                 return null;
             }
             
